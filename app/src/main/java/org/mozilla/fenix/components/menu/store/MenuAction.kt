@@ -171,6 +171,9 @@ sealed class MenuAction : Action {
         /** [Navigate] action dispatched when navigating to the settings. */
         data object Settings : Navigate()
 
+        /** Open DNS over HTTPS directly from the main menu. */
+        data object DnsOverHttps : Navigate()
+
         /** [Navigate] action dispatched when navigating to the homepage settings. */
         data object CustomizeHomepage : Navigate()
 

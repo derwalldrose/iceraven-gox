@@ -1321,6 +1321,11 @@
             app:argType="string"
             app:nullable="true" />
     </dialog>
+    <action
+        android:id="@+id/action_global_dohSettingsFragment"
+        app:destination="@id/dohSettingsFragment"
+        app:popUpTo="@id/menuDialogFragment"
+        app:popUpToInclusive="true" />
     <fragment
         android:id="@+id/dohSettingsFragment"
         android:name="org.mozilla.fenix.settings.doh.DohSettingsFragment" />

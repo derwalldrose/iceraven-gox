@@ -571,6 +571,9 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                                 )
                                             )
                                         },
+                                        onDnsOverHttpsClick = {
+                                            menuStore.dispatch(MenuAction.Navigate.DnsOverHttps)
+                                        },
                                         onSettingsButtonClick = {
                                             menuStore.dispatch(MenuAction.Navigate.Settings)
                                         },

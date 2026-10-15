@@ -248,7 +248,9 @@ class AutofillSettingFragment : BiometricPromptPreferenceFragment(), SystemInset
 
         if (!org.mozilla.fenix.FeatureFlags.ACCOUNT_UI_ENABLED) {
             requirePreference<Preference>(R.string.pref_key_credit_cards_sync_cards_across_devices).isVisible = false
-            requirePreference<Preference>(R.string.pref_key_addresses_sync_cards_across_devices).isVisible = false
+            if (requireComponents.settings.addressFeature) {
+                requirePreference<Preference>(R.string.pref_key_addresses_sync_cards_across_devices).isVisible = false
+            }
             togglePrefsEnabled(creditCardPreferences, true)
             return
         }

@@ -122,6 +122,12 @@ class MenuNavigationMiddleware(
                     }
                 }
 
+                is MenuAction.Navigate.DnsOverHttps ->
+                    navController.nav(
+                        R.id.menuDialogFragment,
+                        MenuDialogFragmentDirections.actionGlobalDohSettingsFragment(),
+                    )
+
                 is MenuAction.Navigate.Settings ->
                     navController.nav(
                         R.id.menuDialogFragment,

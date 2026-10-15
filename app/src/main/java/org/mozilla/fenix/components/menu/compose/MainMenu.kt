@@ -152,6 +152,7 @@ fun MainMenu(
     onCustomizeReaderViewMenuClick: () -> Unit,
     onMozillaAccountButtonClick: () -> Unit,
     onSettingsButtonClick: () -> Unit,
+    onDnsOverHttpsClick: () -> Unit = {},
     onCustomizeHomepageButtonClick: () -> Unit,
     onBookmarkPageMenuClick: () -> Unit,
     onEditBookmarkButtonClick: () -> Unit,
@@ -314,6 +315,12 @@ fun MainMenu(
         )
 
         MenuGroup {
+            MenuItem(
+                label = stringResource(id = R.string.preference_doh_title),
+                beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_globe_24),
+                onClick = onDnsOverHttpsClick,
+            )
+
             if (accessPoint == MenuAccessPoint.Home) {
                 MenuItem(
                     label = stringResource(id = R.string.browser_menu_customize_homepage),
