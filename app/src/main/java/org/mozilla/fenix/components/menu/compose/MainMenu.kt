@@ -153,6 +153,7 @@ fun MainMenu(
     onMozillaAccountButtonClick: () -> Unit,
     onSettingsButtonClick: () -> Unit,
     onDnsOverHttpsClick: () -> Unit = {},
+    onAiChatClick: () -> Unit = {},
     onCustomizeHomepageButtonClick: () -> Unit,
     onBookmarkPageMenuClick: () -> Unit,
     onEditBookmarkButtonClick: () -> Unit,
@@ -316,6 +317,11 @@ fun MainMenu(
         )
 
         MenuGroup {
+            MenuItem(
+                label = "AI 聊天",
+                beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_globe_24),
+                onClick = onAiChatClick,
+            )
             if (accessPoint == MenuAccessPoint.Home) {
                 MenuItem(
                     label = stringResource(id = R.string.browser_menu_customize_homepage),

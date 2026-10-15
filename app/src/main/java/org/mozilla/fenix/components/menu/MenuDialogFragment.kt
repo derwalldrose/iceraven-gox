@@ -571,6 +571,10 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                                 )
                                             )
                                         },
+                                        onAiChatClick = {
+                                            startActivity(android.content.Intent(requireContext(), org.mozilla.fenix.goxai.AiChatActivity::class.java))
+                                            dismiss()
+                                        },
                                         onDnsOverHttpsClick = {
                                             menuStore.dispatch(MenuAction.Navigate.DnsOverHttps)
                                         },

@@ -1,0 +1,33 @@
+/* Deterministic LOCAL FIXTURES, not API responses. Run with NODE_PATH=<scratch>/node_modules node ... */
+const assert=require('node:assert/strict');
+const fs=require('node:fs');const path=require('node:path');const {JSDOM}=require('jsdom');
+const assets=path.resolve(__dirname,'../../main/assets/ai');
+const dom=new JSDOM('<div id="welcome"></div><main id="messages"></main>',{url:'https://gox-chat.invalid/ai/renderer.html',runScripts:'outside-only',pretendToBeVisual:true});
+const w=dom.window;w.scrollTo=()=>{};
+for(const name of ['marked.js','purify.js','highlight.js','chat.js'])w.eval(fs.readFileSync(path.join(assets,name),'utf8'));
+const api=w.GoxChat;
+const fixture='# Fixture title\n\n- alpha\n- beta\n\n| A | B |\n|---|---|\n| 1 | 2 |\n\n```javascript\nconst fixture = 42;\n```\n\n<svg viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" /></svg>';
+api.update([{role:'assistant',content:fixture,status:'已完成'}],false);
+assert.equal(w.document.querySelector('h1').textContent,'Fixture title');
+assert.equal(w.document.querySelectorAll('li').length,2);
+assert.equal(w.document.querySelectorAll('td').length,2);
+assert.ok(w.document.querySelector('.hljs-keyword'));
+assert.ok(w.document.querySelector('.codebar button'));
+assert.equal(w.document.querySelectorAll('footer button').length,2,'copy/retry are real mobile action buttons');
+assert.ok(!fs.readFileSync(path.join(assets,'chat.css'),'utf8').includes('article{margin:0 0 18px;padding:14px;background:white;border:1px'),'assistant messages must be borderless');
+assert.ok(w.document.querySelector('svg circle'));
+const row=w.document.querySelector('article');
+api.update([{role:'assistant',content:fixture+'\n\nstream fixture',status:'生成中'}],false);
+assert.equal(w.document.querySelector('article'),row,'incremental update keeps row identity');
+const hostile='<script>alert(1)</script><img src=x onerror=alert(2)><svg onload=alert(3)><foreignObject><iframe src="https://evil.invalid"></iframe></foreignObject><use href="https://evil.invalid/x" /></svg><a href="javascript:alert(1)">bad</a><a href="gox-action://retry/0">native</a><div style="background:url(https://evil.invalid)">x</div>';
+const clean=api.sanitize(hostile);assert.ok(!/<script|<img|onerror|onload|foreignobject|<iframe|<use|javascript:|gox-action:|style=/i.test(clean),clean);
+api.update([{role:'assistant',content:'鹈鹕骑自行车svg\n```svg\n<svg viewBox="0 0 120 80"><circle class="wheel" cx="30" cy="60" r="15"/><circle cx="90" cy="60" r="15"/><path d="M30 60L55 30L90 60Z"/><text x="42" y="18">鹈鹕</text></svg>\n```\n\n猫svg\n```html\n<strong>猫</strong><script>alert(1)</script>\n```',status:'已完成'}],false);
+const frames=w.document.querySelectorAll('iframe');assert.equal(frames.length,2,'completed SVG/HTML fences auto-preview');
+for(const frame of frames){assert.equal(frame.getAttribute('sandbox'),'');assert.equal(frame.getAttribute('referrerpolicy'),'no-referrer');assert.ok(frame.srcdoc.includes("script-src 'none'"));assert.ok(!frame.srcdoc.includes('<script>'))}
+assert.ok(frames[0].srcdoc.includes('鹈鹕'));assert.ok(frames[1].srcdoc.includes('<strong>猫</strong>'));
+api.update([{role:'assistant',content:'```svg\n<svg><text>流式猫</text></svg>\n```',status:'生成中'}],false);
+assert.equal(w.document.querySelectorAll('iframe').length,0,'incomplete stream does not churn previews');
+api.update([{role:'assistant',content:'```svg\n<svg><text>流式猫</text></svg>\n```',status:'已完成'}],false);
+assert.equal(w.document.querySelectorAll('iframe').length,1,'preview appears when stream completes');
+api.update([],false);assert.equal(w.document.querySelectorAll('article').length,0);assert.equal(w.document.querySelector('#welcome').hidden,false);
+console.log('PASS: local fixture markdown, tables/lists, syntax/copy, auto SVG+HTML sandbox preview, sanitizer, incremental rows, clear (no API data)');
