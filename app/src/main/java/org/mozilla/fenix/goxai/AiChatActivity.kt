@@ -40,13 +40,14 @@ class AiChatActivity : AppCompatActivity() {
         val base = field("ai_base_url", "API 地址（包含 /v1）", AiDefaults.BASE_URL)
         val model = field("ai_model", "模型", AiDefaults.MODEL)
         val key = field("ai_api_key", "API Key", "", true)
+        val search = field("search_template", "搜索地址（包含 {query}）", BrowserSearchTools.DEFAULT_SEARCH)
         AlertDialog.Builder(this).setTitle("AI 接口设置").setView(form)
             .setNegativeButton("取消", null).setPositiveButton("保存") { _, _ ->
                 val uri = android.net.Uri.parse(base.text.toString().trim())
-                if (uri.scheme != "https" || uri.host.isNullOrBlank()) {
+                if (uri.scheme != "https" || uri.host.isNullOrBlank() || !search.text.toString().startsWith("https://") || !search.text.toString().contains("{query}")) {
                     android.widget.Toast.makeText(this, "接口必须是有效 HTTPS 地址", android.widget.Toast.LENGTH_LONG).show()
                 } else prefs.edit().putString("ai_base_url", base.text.toString().trim().trimEnd('/'))
-                    .putString("ai_model", model.text.toString().trim()).putString("ai_api_key",key.text.toString().trim()).apply()
+                    .putString("search_template", search.text.toString().trim()).putString("ai_model", model.text.toString().trim()).putString("ai_api_key",key.text.toString().trim()).apply()
             }.show()
     }
 }
