@@ -314,12 +314,6 @@ fun MainMenu(
         )
 
         MenuGroup {
-            MozillaAccountMenuItem(
-                account = account,
-                accountState = accountState,
-                onClick = onMozillaAccountButtonClick,
-            )
-
             if (accessPoint == MenuAccessPoint.Home) {
                 MenuItem(
                     label = stringResource(id = R.string.browser_menu_customize_homepage),

@@ -246,6 +246,13 @@ class AutofillSettingFragment : BiometricPromptPreferenceFragment(), SystemInset
             showToolbar(getString(R.string.preferences_credit_cards_2))
         }
 
+        if (!org.mozilla.fenix.FeatureFlags.ACCOUNT_UI_ENABLED) {
+            requirePreference<Preference>(R.string.pref_key_credit_cards_sync_cards_across_devices).isVisible = false
+            requirePreference<Preference>(R.string.pref_key_addresses_sync_cards_across_devices).isVisible = false
+            togglePrefsEnabled(creditCardPreferences, true)
+            return
+        }
+
         SyncPreferenceView(
             syncPreference = requirePreference(R.string.pref_key_credit_cards_sync_cards_across_devices),
             lifecycleOwner = viewLifecycleOwner,
@@ -310,7 +317,8 @@ class AutofillSettingFragment : BiometricPromptPreferenceFragment(), SystemInset
 
         // show address sync preference if address sync is enabled
         val addressSyncPreference = requirePreference<Preference>(R.string.pref_key_addresses_sync_cards_across_devices)
-        addressSyncPreference.isVisible = requireComponents.settings.isAddressSyncEnabled
+        addressSyncPreference.isVisible =
+            org.mozilla.fenix.FeatureFlags.ACCOUNT_UI_ENABLED && requireComponents.settings.isAddressSyncEnabled
 
         if (hasAddresses) {
             manageAddressesPreference.icon = null

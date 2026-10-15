@@ -45,7 +45,7 @@ enum class ShareSheetChooserAction {
 
     companion object {
         /** Chooser actions offered when sharing a set of tabs. */
-        val tabChooserActions = listOf(SEND_TO_DEVICES, QR_CODE)
+        val tabChooserActions = listOf(QR_CODE)
     }
 }
 
@@ -151,7 +151,7 @@ interface ShareSheetLauncher {
         items: List<ShareData>,
         isPrivate: Boolean = false,
         subject: String? = null,
-        chooserActions: List<ShareSheetChooserAction> = listOf(ShareSheetChooserAction.SEND_TO_DEVICES),
+        chooserActions: List<ShareSheetChooserAction> = emptyList(),
         thumbnailUri: Uri? = null,
     )
 
@@ -160,7 +160,6 @@ interface ShareSheetLauncher {
             listOf(
                 ShareSheetChooserAction.SAVE_PDF,
                 ShareSheetChooserAction.PRINT,
-                ShareSheetChooserAction.SEND_TO_DEVICES,
                 ShareSheetChooserAction.QR_CODE,
             )
     }

@@ -251,7 +251,7 @@ class Settings(
 
     /** Indicates whether or not the "Synced Tabs" section should be shown on the home screen. */
     val showSyncedTabs: Boolean
-        get() = FxNimbus.features.homescreen.value().sectionsEnabled[HomeScreenSection.SYNCED_TABS] == true
+        get() = false
 
     /** Indicates whether or not the "Collections" section should be shown on the home screen. */
     val collections: Boolean
@@ -1678,10 +1678,9 @@ class Settings(
         default = true,
     )
 
-    var shouldShowSignInButton by booleanPreference(
-        appContext.getPreferenceKey(R.string.pref_key_show_sign_in_button),
-        default = true,
-    )
+    var shouldShowSignInButton: Boolean
+        get() = false
+        set(@Suppress("UNUSED_PARAMETER") value) = Unit
 
     var isFissionEnabled by booleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_enable_fission),

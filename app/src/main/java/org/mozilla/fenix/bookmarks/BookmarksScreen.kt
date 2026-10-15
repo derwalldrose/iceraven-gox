@@ -1039,7 +1039,7 @@ private fun EmptyList(
                 is EmptyListState.NotAuthenticated ->
                     RootEmptyContent(
                         dispatcher,
-                        showSignIn = true,
+                        showSignIn = false,
                     )
                 EmptyListState.Authenticated ->
                     RootEmptyContent(

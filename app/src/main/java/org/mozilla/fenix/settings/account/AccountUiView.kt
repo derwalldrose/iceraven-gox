@@ -46,6 +46,13 @@ class AccountUiView(
      * and logged-in but needs to re-authenticate.
      */
     fun updateAccountUIState(context: Context, profile: Profile?) {
+        if (!org.mozilla.fenix.FeatureFlags.ACCOUNT_UI_ENABLED) {
+            preferenceSignIn.isVisible = false
+            preferenceFirefoxAccount.isVisible = false
+            preferenceFirefoxAccountAuthError.isVisible = false
+            accountPreferenceCategory.isVisible = false
+            return
+        }
         val account = accountManager.authenticatedAccount()
 
         // Signed-in, no problems.

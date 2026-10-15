@@ -442,8 +442,8 @@ class CustomizationFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFrag
 
 
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_show_sign_in_button).apply {
-            isChecked = context.components.settings.shouldShowSignInButton
-            onPreferenceChangeListener = SharedPreferenceUpdater()
+            isVisible = false
+            isChecked = false
         }
         
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_fission).apply {

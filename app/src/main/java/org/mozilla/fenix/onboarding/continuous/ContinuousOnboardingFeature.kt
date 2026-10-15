@@ -99,16 +99,14 @@ class ContinuousOnboardingFeature(
             ContinuousOnboardingStage.DAY_2,
             ContinuousOnboardingStage.DAY_3 -> maybeRequestDefaultBrowserRole(stage)
 
-            ContinuousOnboardingStage.DAY_5 ->
-                if (!settings.signedInFxaAccount) {
-                    showSyncCardDialog()
-                } else {
-                    telemetryRecorder.onOnboardingComplete(
-                        sequenceId = OnboardingPageUiData.Type.SYNC_SIGN_IN.telemetryId,
-                        sequencePosition = "0",
-                    )
-                    markStageCompleted(stage)
-                }
+            ContinuousOnboardingStage.DAY_5 -> {
+                // Account UI is disabled in this product; never surface a delayed sign-in prompt.
+                telemetryRecorder.onOnboardingComplete(
+                    sequenceId = OnboardingPageUiData.Type.SYNC_SIGN_IN.telemetryId,
+                    sequencePosition = "0",
+                )
+                markStageCompleted(stage)
+            }
 
             ContinuousOnboardingStage.DAY_7 -> {
                 logger.info("Observing IP Protection eligibility for day 7 onboarding.")

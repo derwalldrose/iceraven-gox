@@ -102,6 +102,18 @@ android {
         }
     }
 
+    signingConfigs {
+        release {
+            def releaseKeystorePath = System.getenv("ICERAVEN_KEYSTORE_PATH")
+            if (releaseKeystorePath) {
+                storeFile file(releaseKeystorePath)
+                storePassword System.getenv("ICERAVEN_STORE_PASSWORD")
+                keyAlias "iceraven"
+                keyPassword System.getenv("ICERAVEN_STORE_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         debug {
             shrinkResources = false
@@ -175,6 +187,7 @@ android {
             matchingFallbacks = ['debug']
         }
         forkRelease releaseTemplate >> {
+            signingConfig signingConfigs.release
             buildConfigField "boolean", "USE_RELEASE_VERSIONING", "true"
             applicationIdSuffix ".iceraven"
             def deepLinkSchemeValue = "iceraven"
@@ -330,6 +343,10 @@ androidComponents {
                 // channels that never shipped a Fennec build.
                 def abi = output.filters.find { it.filterType == FilterConfiguration.FilterType.ABI }?.identifier ?: "universal"
                 def versionCodeOverride = Config.generateFennecVersionCode(abi)
+                if (buildType == 'forkRelease') {
+                    // Keep custom builds above the corresponding upstream Iceraven build.
+                    versionCodeOverride += 1000
+                }
                 project.logger.debug("versionCode for $abi = $versionCodeOverride")
                 output.versionName.set(versionName)
                 output.versionCode.set(versionCodeOverride)

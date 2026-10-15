@@ -13,6 +13,9 @@ object FeatureFlags {
      */
     val customExtensionCollectionFeature = Config.channel.isNightlyOrDebug || Config.channel.isBeta
 
+    /** Product-level switch: account/sync code remains for upstream merge compatibility, but no UI exposes it. */
+    const val ACCOUNT_UI_ENABLED = false
+
     /** Pull-to-refresh allows you to pull the web content down far enough to have the page to reload. */
     const val PULL_TO_REFRESH_ENABLED = true
 

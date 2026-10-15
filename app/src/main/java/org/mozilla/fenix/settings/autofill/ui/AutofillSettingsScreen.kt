@@ -84,7 +84,10 @@ internal fun AutofillSettingsScreen(
         Column(modifier = Modifier.padding(paddingValues).fillMaxWidth()) {
             Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static100))
 
-            AutofillSettingsAddressSection(store, isAddressSyncEnabled)
+            AutofillSettingsAddressSection(
+                store,
+                isAddressSyncEnabled && org.mozilla.fenix.FeatureFlags.ACCOUNT_UI_ENABLED,
+            )
 
             Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static200))
 
@@ -212,22 +215,24 @@ private fun AutofillSettingsCreditCardSection(store: AutofillSettingsStore) {
 
     Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static100))
 
-    if (state.accountAuthState == AccountAuthState.Authenticated) {
-        SwitchListItem(
-            label = stringResource(id = R.string.preferences_credit_cards_sync_cards),
-            checked = state.syncCreditCards,
-            showSwitchAfter = true,
-        ) {
-            store.dispatch(UpdateCreditCardsSyncStatus(!state.syncCreditCards))
+    if (org.mozilla.fenix.FeatureFlags.ACCOUNT_UI_ENABLED) {
+        if (state.accountAuthState == AccountAuthState.Authenticated) {
+            SwitchListItem(
+                label = stringResource(id = R.string.preferences_credit_cards_sync_cards),
+                checked = state.syncCreditCards,
+                showSwitchAfter = true,
+            ) {
+                store.dispatch(UpdateCreditCardsSyncStatus(!state.syncCreditCards))
+            }
+        } else {
+            TextListItem(
+                label = stringResource(id = R.string.preferences_credit_cards_sync_cards_across_devices),
+                onClick = { store.dispatch(SyncCardsAcrossDevicesClicked) },
+            )
         }
-    } else {
-        TextListItem(
-            label = stringResource(id = R.string.preferences_credit_cards_sync_cards_across_devices),
-            onClick = { store.dispatch(SyncCardsAcrossDevicesClicked) },
-        )
-    }
 
-    Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static100))
+        Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static100))
+    }
 
     if (state.creditCards.isEmpty()) {
         IconListItem(

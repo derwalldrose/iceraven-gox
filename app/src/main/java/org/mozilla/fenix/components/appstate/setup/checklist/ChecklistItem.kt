@@ -107,7 +107,6 @@ private fun createTasksCollection(settings: Settings) =
         listOf(
             defaultBrowserTask(isDefaultBrowserBlocking()),
             exploreExtensionTask(hasCompletedSetupStepExtensions),
-            signInTask(signedInFxaAccount),
         )
     }
 
@@ -127,14 +126,6 @@ private fun exploreExtensionTask(isCompleted: Boolean) =
         isCompleted = isCompleted,
     )
 
-private fun signInTask(isCompleted: Boolean) =
-    ChecklistItem.Task(
-        type = ChecklistItem.Task.Type.SIGN_IN,
-        title = R.string.setup_checklist_task_account_sync,
-        icon = R.drawable.ic_fx_accounts_avatar,
-        isCompleted = isCompleted,
-    )
-
 private fun createGroupsCollection(settings: Settings, tabStripEnabled: Boolean) =
     listOf(
         essentialsGroup(settings),
@@ -149,7 +140,6 @@ private fun essentialsGroup(settings: Settings) =
             with(settings) {
                 listOf(
                     defaultBrowserTask(isDefaultBrowserBlocking()),
-                    signInTask(signedInFxaAccount),
                 )
             },
     )

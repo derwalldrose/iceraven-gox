@@ -30,7 +30,7 @@ enum class Page {
                 PrivateTabs,
                 NormalTabs,
                 TabGroups.takeIf { shouldShowTabGroupsPage },
-                SyncedTabs,
+                // Synced Tabs is intentionally not exposed when account UI is disabled.
             )
 
         /**

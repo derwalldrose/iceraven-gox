@@ -22,6 +22,14 @@ jobs:
           java-version: 17
           distribution: temurin
 
+      - name: Restore release keystore
+        env:
+          ICERAVEN_KEYSTORE_BASE64: ${{ secrets.ICERAVEN_KEYSTORE_BASE64 }}
+        run: |
+          test -n "$ICERAVEN_KEYSTORE_BASE64"
+          printf '%s' "$ICERAVEN_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/iceraven-release.jks"
+          keytool -list -keystore "$RUNNER_TEMP/iceraven-release.jks" -storepass "${{ secrets.ICERAVEN_STORE_PASSWORD }}"
+
       - name: Install Android SDK with pieces Gradle skips
         run: ./automation/iceraven/install-sdk.sh
 
@@ -29,7 +37,7 @@ jobs:
         run: free -h
 
       - name: Create version name
-        run: echo "VERSION_NAME=$(git describe --tags HEAD)" >> $GITHUB_ENV
+        run: echo "VERSION_NAME=$(git describe --tags HEAD)-gox" >> $GITHUB_ENV
 
       - name: Patch on the fly
         run: |
@@ -48,21 +56,10 @@ jobs:
       - name: Build forkRelease variant of app
         env:
           GRADLE_OPTS: -Dorg.gradle.jvmargs="-XX:MaxMetaspaceSize=4g -Xms1g -Xmx7g -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/dev/stderr"
+          ICERAVEN_KEYSTORE_PATH: ${{ runner.temp }}/iceraven-release.jks
+          ICERAVEN_STORE_PASSWORD: ${{ secrets.ICERAVEN_STORE_PASSWORD }}
         run: |
           /usr/bin/time -v ./gradlew app:assembleForkRelease -PversionName=${{ env.VERSION_NAME }} --stacktrace --no-daemon
-
-      - name: Debug
-        run: |
-          /usr/bin/ls -alh gradle/build/app/outputs/apk/forkRelease/
-
-      - name: Create signed APKs
-        uses: akliuxingyuan/sign-android-release@v2.0.1
-        with:
-          releaseDir: gradle/build/app/outputs/apk/forkRelease/
-          signingKey: ${{ secrets.DEBUG_SIGNING_KEY }}
-          keyAlias: ${{ secrets.DEBUG_ALIAS }}
-          keyStorePassword: ${{ secrets.DEBUG_KEY_STORE_PASSWORD }}
-          keyPassword: ${{ secrets.DEBUG_KEY_PASSWORD }}
 
       - name: Debug
         run: |
