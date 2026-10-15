@@ -73,6 +73,9 @@ class MenuTelemetryMiddleware(private val accessPoint: MenuAccessPoint) : Middle
             MenuAction.Navigate.Passwords ->
                 Events.browserMenuAction.record(Events.BrowserMenuActionExtra(item = "passwords"))
 
+            // Custom DNS settings do not emit a telemetry event.
+            MenuAction.Navigate.DnsOverHttps -> Unit
+
             MenuAction.Navigate.Settings -> {
                 when (accessPoint) {
                     MenuAccessPoint.Browser ->
