@@ -26,6 +26,9 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 class AiChatFragment : Fragment() {
+    private val notificationPermission = registerForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
+    ) { _ -> }
     private lateinit var state: AiConversationState
     private var web: WebView? = null
     private var ready = false
@@ -51,8 +54,8 @@ class AiChatFragment : Fragment() {
         input.setText(state.draft)
         view.findViewById<View>(R.id.ai_composer).setOnClickListener {
             input.requestFocus()
-            (requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager)
-                .showSoftInput(input, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+            androidx.core.view.WindowInsetsControllerCompat(requireActivity().window, input)
+                .show(androidx.core.view.WindowInsetsCompat.Type.ime())
         }
         val assets = requireContext().assets
         web = view.findViewById<WebView>(R.id.ai_messages).apply {
@@ -106,7 +109,7 @@ class AiChatFragment : Fragment() {
             if (state.isGenerating) state.stop()
             else {
                 if (Build.VERSION.SDK_INT >= 33 && requireContext().checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                    requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 2401)
+                    notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
                 }
                 val text = input.text.toString()
                 if (state.send(text)) { input.setText(""); state.draft = "" }
