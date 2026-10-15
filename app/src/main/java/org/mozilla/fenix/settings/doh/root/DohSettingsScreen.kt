@@ -4,6 +4,10 @@
 
 package org.mozilla.fenix.settings.doh.root
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -37,15 +41,12 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
-import mozilla.components.compose.base.Dropdown
 import mozilla.components.compose.base.LinkText
 import mozilla.components.compose.base.LinkTextState
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.button.RadioButton
 import mozilla.components.compose.base.button.TextButton
-import mozilla.components.compose.base.menu.MenuItem
-import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.base.textfield.TextField
 import mozilla.components.compose.base.theme.PreviewThemeProvider
 import mozilla.components.compose.base.theme.Theme
@@ -115,20 +116,12 @@ internal fun DohSettingsScreen(
                 onCustomClicked = onCustomClicked,
                 onCustomCancelClicked = onCustomCancelClicked,
                 onCustomAddClicked = onCustomAddClicked,
+                onCustomEditClicked = onCustomEditClicked,
+                onCustomDeleteClicked = { pendingDelete = it },
                 onDefaultInfoClicked = onDefaultInfoClicked,
                 onIncreasedInfoClicked = onIncreasedInfoClicked,
                 onMaxInfoClicked = onMaxInfoClicked,
             )
-
-            state.providers.filterIsInstance<Provider.Custom>().filter { it.url.isNotBlank() }.forEach { provider ->
-                Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp)) {
-                    Text(text = provider.url, style = FirefoxTheme.typography.body2)
-                    Row {
-                        TextButton(text = stringResource(R.string.gox_doh_edit), onClick = { onCustomEditClicked(provider) })
-                        TextButton(text = stringResource(R.string.gox_doh_delete), onClick = { pendingDelete = provider })
-                    }
-                }
-            }
 
             HorizontalDivider(modifier = Modifier.padding(8.dp))
 
@@ -235,6 +228,8 @@ private fun DohSelection(
     onCustomClicked: () -> Unit,
     onCustomCancelClicked: () -> Unit,
     onCustomAddClicked: (Provider.Custom, String) -> Unit,
+    onCustomEditClicked: (Provider.Custom) -> Unit,
+    onCustomDeleteClicked: (Provider.Custom) -> Unit,
     onDefaultInfoClicked: () -> Unit,
     onIncreasedInfoClicked: () -> Unit,
     onMaxInfoClicked: () -> Unit,
@@ -279,6 +274,8 @@ private fun DohSelection(
                                         },
                                         providers = state.providers,
                                         onCustomClicked = onCustomClicked,
+                                        onCustomEditClicked = onCustomEditClicked,
+                                        onCustomDeleteClicked = onCustomDeleteClicked,
                                     )
                                 }
                             }
@@ -319,6 +316,8 @@ private fun DohSelection(
                                         },
                                         providers = state.providers,
                                         onCustomClicked = onCustomClicked,
+                                        onCustomEditClicked = onCustomEditClicked,
+                                        onCustomDeleteClicked = onCustomDeleteClicked,
                                     )
                                 }
                             }
@@ -378,12 +377,15 @@ private fun ProviderSummary(
     )
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ProviderDropdown(
     selectedProviderOption: Provider,
     onProviderSelected: (Provider) -> Unit = {},
     providers: List<Provider>,
     onCustomClicked: () -> Unit,
+    onCustomEditClicked: (Provider.Custom) -> Unit,
+    onCustomDeleteClicked: (Provider.Custom) -> Unit,
 ) {
     val customText = stringResource(R.string.preference_doh_provider_custom)
     val defaultText = stringResource(R.string.preference_doh_provider_default)
@@ -395,64 +397,70 @@ private fun ProviderDropdown(
             is Provider.Custom -> selectedProviderOption.url.ifBlank { customText }
         }
 
-    val dropdownItems =
-        buildProviderMenuItems(
-            providers = providers,
-            selectedProvider = selectedProviderOption,
-            customText = customText,
-            defaultText = defaultText,
-            onProviderSelected = onProviderSelected,
-            onCustomClicked = onCustomClicked,
-        )
-
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
-    ) {
-        Dropdown(
-            label = stringResource(R.string.preference_doh_choose_provider),
-            placeholder = placeholder,
-            dropdownItems = dropdownItems,
+    var expanded by remember { mutableStateOf(false) }
+    var contextProvider by remember { mutableStateOf<Provider.Custom?>(null) }
+    Box(Modifier.fillMaxWidth().padding(vertical = 16.dp)) {
+        Column(Modifier.fillMaxWidth().combinedClickable(
+            onClick = { expanded = true },
+            onLongClick = {
+                if (selectedProviderOption is Provider.Custom && selectedProviderOption.url.isNotBlank()) {
+                    contextProvider = selectedProviderOption
+                }
+            },
+        ).padding(vertical = 8.dp)) {
+            Text(text = stringResource(R.string.preference_doh_choose_provider), style = FirefoxTheme.typography.body2)
+            Text(text = "$placeholder ▾", style = FirefoxTheme.typography.body1)
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            providers.forEach { provider ->
+                val label = when (provider) {
+                    is Provider.BuiltIn -> provider.name + if (provider.default) " $defaultText" else ""
+                    is Provider.Custom -> provider.url.ifBlank { customText }
+                }
+                Row(
+                    modifier = Modifier.widthIn(min = 200.dp, max = 320.dp).combinedClickable(
+                        onClick = {
+                            expanded = false
+                            if (provider is Provider.Custom && provider.url.isBlank()) onCustomClicked()
+                            else onProviderSelected(provider)
+                        },
+                        onLongClick = {
+                            if (provider is Provider.Custom && provider.url.isNotBlank()) {
+                                expanded = false
+                                contextProvider = provider
+                            }
+                        },
+                    ).padding(horizontal = 16.dp, vertical = 14.dp),
+                ) {
+                    Text(text = (if (provider == selectedProviderOption) "✓ " else "") + label,
+                        style = FirefoxTheme.typography.body2)
+                }
+            }
+        }
+    }
+    contextProvider?.let { provider ->
+        AlertDialog(
+            onDismissRequest = { contextProvider = null },
+            title = { Text(text = customText) },
+            text = { Text(text = provider.url) },
+            confirmButton = {
+                TextButton(text = stringResource(R.string.gox_doh_edit), onClick = {
+                    contextProvider = null
+                    onCustomEditClicked(provider)
+                })
+            },
+            dismissButton = {
+                TextButton(text = stringResource(R.string.gox_doh_delete), onClick = {
+                    contextProvider = null
+                    onCustomDeleteClicked(provider)
+                })
+            },
         )
     }
 
     if (selectedProviderOption is Provider.Custom) {
         TextWithUnderline(
             text = selectedProviderOption.url,
-        )
-    }
-}
-
-/** Returns a list of [MenuItem.CheckableItem] based on the providers. */
-private fun buildProviderMenuItems(
-    providers: List<Provider>,
-    selectedProvider: Provider,
-    customText: String,
-    defaultText: String,
-    onProviderSelected: (Provider) -> Unit,
-    onCustomClicked: () -> Unit,
-): List<MenuItem.CheckableItem> {
-    return providers.map { provider ->
-        // Determine the label to display
-        val text =
-            when (provider) {
-                is Provider.BuiltIn -> {
-                    provider.name + if (provider.default) " $defaultText" else ""
-                }
-
-                is Provider.Custom -> provider.url.ifBlank { customText }
-            }
-
-        MenuItem.CheckableItem(
-            text = Text.String(text),
-            isChecked = (provider == selectedProvider),
-            onClick = {
-                if (provider is Provider.Custom && provider.url.isBlank()) {
-                    onCustomClicked()
-                } else {
-                    onProviderSelected(provider)
-                }
-            },
         )
     }
 }
