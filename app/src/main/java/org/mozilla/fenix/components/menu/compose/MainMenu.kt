@@ -312,15 +312,10 @@ fun MainMenu(
             onHistoryMenuClick = onHistoryMenuClick,
             onDownloadsMenuClick = onDownloadsMenuClick,
             onPasswordsMenuClick = onPasswordsMenuClick,
+            onDnsOverHttpsClick = onDnsOverHttpsClick,
         )
 
         MenuGroup {
-            MenuItem(
-                label = stringResource(id = R.string.preference_doh_title),
-                beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_globe_24),
-                onClick = onDnsOverHttpsClick,
-            )
-
             if (accessPoint == MenuAccessPoint.Home) {
                 MenuItem(
                     label = stringResource(id = R.string.browser_menu_customize_homepage),
@@ -509,6 +504,7 @@ private fun LibraryMenuGroup(
     onHistoryMenuClick: () -> Unit,
     onDownloadsMenuClick: () -> Unit,
     onPasswordsMenuClick: () -> Unit,
+    onDnsOverHttpsClick: () -> Unit,
 ) {
     val spacerWidth = 2.dp
 
@@ -529,7 +525,7 @@ private fun LibraryMenuGroup(
             this.collectionInfo =
                 CollectionInfo(
                     rowCount = 1,
-                    columnCount = 4,
+                    columnCount = 5,
                 )
         },
         horizontalArrangement = Arrangement.SpaceEvenly,
@@ -573,9 +569,20 @@ private fun LibraryMenuGroup(
             modifier = Modifier.weight(1f).fillMaxHeight(),
             iconRes = iconsR.drawable.mozac_ic_login_24,
             labelRes = R.string.browser_menu_passwords,
-            shape = rightShape,
+            shape = middleShape,
             index = 3,
             onClick = onPasswordsMenuClick,
+        )
+
+        Spacer(Modifier.width(spacerWidth))
+
+        LibraryMenuItem(
+            modifier = Modifier.weight(1f).fillMaxHeight(),
+            iconRes = iconsR.drawable.mozac_ic_globe_24,
+            labelRes = R.string.browser_menu_dns_short,
+            shape = rightShape,
+            index = 4,
+            onClick = onDnsOverHttpsClick,
         )
     }
 }
