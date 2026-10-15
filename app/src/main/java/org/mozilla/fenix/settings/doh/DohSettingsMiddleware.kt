@@ -58,6 +58,19 @@ internal class DohSettingsMiddleware(
                 handleAddCustomProvider(store, action)
             }
 
+            is DohSettingsRootAction.DohCustomProviderDialogAction.CancelClicked -> {
+                val provider = getSettingsProvider()
+                store.dispatch(
+                    DohSettingsRootAction.DohSettingsLoaded(
+                        allProtectionLevels = provider.getProtectionLevels(),
+                        selectedProtectionLevel = provider.getSelectedProtectionLevel(),
+                        exceptionsList = provider.getExceptions(),
+                        providers = provider.getDefaultProviders(),
+                        selectedProvider = provider.getSelectedProvider(),
+                    )
+                )
+            }
+
             is DohSettingsRootAction.DefaultInfoClicked -> {
                 getNavController().navigate(DohSettingsDestinations.INFO_DEFAULT)
             }

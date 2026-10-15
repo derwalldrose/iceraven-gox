@@ -3176,6 +3176,13 @@ class Settings(
             default = "",
         )
 
+    /** Stores all user-added DoH providers; [dohProviderUrl] remains the active selection. */
+    var dohCustomProviderUrls by
+        stringSetPreference(
+            key = appContext.getPreferenceKey(R.string.pref_key_doh_custom_provider_uris),
+            default = emptySet(),
+        )
+
     /**
      * Stores the URI of the default DoH provider. Bug 1946867 - Currently "hardcoded" to
      * "https://mozilla.cloudflare-dns.com/dns-query"

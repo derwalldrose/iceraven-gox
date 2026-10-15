@@ -55,22 +55,17 @@ internal class DefaultDohSettingsProvider(
             default = dohDefaultProviderUrl == nextDnsUri,
         )
     private val providerUrl = settings.dohProviderUrl
-    private val custom =
-        Provider.Custom(
-            url =
-                if (providerUrl != cloudflareUri && providerUrl != nextDnsUri) {
-                    providerUrl
-                } else {
-                    ""
-                }
-        )
+
+    private fun getCustomProviders(): List<Provider.Custom> {
+        val savedUrls =
+            (settings.dohCustomProviderUrls + providerUrl)
+                .filter { it.isNotBlank() && it != cloudflareUri && it != nextDnsUri }
+                .sorted()
+        return savedUrls.map { Provider.Custom(it) }
+    }
 
     override fun getDefaultProviders(): List<Provider> =
-        listOf(
-            cloudflare,
-            nextDns,
-            custom,
-        )
+        listOf(cloudflare, nextDns) + getCustomProviders() + Provider.Custom(url = "")
 
     override fun getSelectedProtectionLevel(): ProtectionLevel {
         return when (settings.getDohSettingsMode()) {
@@ -93,7 +88,8 @@ internal class DefaultDohSettingsProvider(
                     cloudflareUri -> cloudflare
                     nextDnsUri -> nextDns
                     "" -> getDefaultProviders().first()
-                    else -> custom
+                    else -> getCustomProviders().firstOrNull { it.url == settings.dohProviderUrl }
+                        ?: Provider.Custom(settings.dohProviderUrl)
                 }
             }
         }
@@ -117,9 +113,8 @@ internal class DefaultDohSettingsProvider(
     }
 
     override fun setCustomProvider(url: String) {
-        // Update the app layer
+        settings.dohCustomProviderUrls = settings.dohCustomProviderUrls + url
         settings.dohProviderUrl = url
-        // validate the url, maybe throw some "known expectations" that we can handle in the middleware
         engine.settings.dohProviderUrl = url
     }
 

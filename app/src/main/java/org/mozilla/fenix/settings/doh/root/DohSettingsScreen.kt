@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.settings.doh.root
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,8 +11,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -319,13 +320,14 @@ private fun DohSelection(
         }
     }
 
-    if (state.selectedProvider is Provider.Custom && state.isCustomProviderDialogOn) {
+    if (state.isCustomProviderDialogOn) {
+        val newCustomProvider = Provider.Custom(url = "")
         AlertDialogAddCustomProvider(
-            customProviderUrl = state.selectedProvider.url,
+            customProviderUrl = "",
             customProviderErrorState = state.customProviderErrorState,
             onCustomCancelClicked = { onCustomCancelClicked() },
             onCustomAddClicked = { url ->
-                onCustomAddClicked(state.selectedProvider, url)
+                onCustomAddClicked(newCustomProvider, url)
             },
         )
     }
@@ -359,10 +361,10 @@ private fun ProviderDropdown(
     val defaultText = stringResource(R.string.preference_doh_provider_default)
 
     val placeholder =
-        if (selectedProviderOption is Provider.BuiltIn) {
-            selectedProviderOption.name + if (selectedProviderOption.default) " $defaultText" else ""
-        } else {
-            customText
+        when (selectedProviderOption) {
+            is Provider.BuiltIn ->
+                selectedProviderOption.name + if (selectedProviderOption.default) " $defaultText" else ""
+            is Provider.Custom -> selectedProviderOption.url.ifBlank { customText }
         }
 
     val dropdownItems =
@@ -389,7 +391,6 @@ private fun ProviderDropdown(
     if (selectedProviderOption is Provider.Custom) {
         TextWithUnderline(
             text = selectedProviderOption.url,
-            showCustomProviderDialog = { onCustomClicked() },
         )
     }
 }
@@ -411,16 +412,17 @@ private fun buildProviderMenuItems(
                     provider.name + if (provider.default) " $defaultText" else ""
                 }
 
-                is Provider.Custom -> customText
+                is Provider.Custom -> provider.url.ifBlank { customText }
             }
 
         MenuItem.CheckableItem(
             text = Text.String(text),
             isChecked = (provider == selectedProvider),
             onClick = {
-                onProviderSelected(provider)
-                if (provider is Provider.Custom) {
+                if (provider is Provider.Custom && provider.url.isBlank()) {
                     onCustomClicked()
+                } else {
+                    onProviderSelected(provider)
                 }
             },
         )
@@ -443,7 +445,7 @@ private fun AlertDialogAddCustomProvider(
         title = {
             Text(
                 text = stringResource(R.string.preference_doh_provider_custom_dialog_title),
-                style = FirefoxTheme.typography.headline5,
+                style = FirefoxTheme.typography.headline6,
             )
         },
         text = {
@@ -462,7 +464,7 @@ private fun AlertDialogAddCustomProvider(
                 label = stringResource(R.string.preference_doh_provider_custom_dialog_textfield),
                 isError = customProviderErrorState != CustomProviderErrorState.Valid,
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.widthIn(max = 280.dp).heightIn(min = 48.dp, max = 56.dp),
             )
         },
         onDismissRequest = onCustomCancelClicked,
@@ -485,15 +487,11 @@ private fun AlertDialogAddCustomProvider(
 private fun TextWithUnderline(
     text: String,
     modifier: Modifier = Modifier,
-    showCustomProviderDialog: () -> Unit = {},
     underlineColor: Color = MaterialTheme.colorScheme.outline,
 ) {
     Column(modifier = modifier) {
         Text(
-            modifier =
-                Modifier.fillMaxWidth().clickable {
-                    showCustomProviderDialog()
-                },
+            modifier = Modifier.fillMaxWidth(),
             style = FirefoxTheme.typography.body2,
             text = text,
         )

@@ -49,10 +49,14 @@ internal fun dohSettingsReducer(state: DohSettingsState, action: DohSettingsActi
         }
 
         is DohSettingsRootAction.DohCustomProviderDialogAction.ValidUrlDetected -> {
+            val savedProvider = action.customProvider.copy(url = action.url)
             state.copy(
                 isCustomProviderDialogOn = false,
                 customProviderErrorState = CustomProviderErrorState.Valid,
-                selectedProvider = action.customProvider.copy(url = action.url),
+                providers =
+                    (state.providers.filterNot { it is Provider.Custom && it.url == action.url } + savedProvider)
+                        .filterNot { it is Provider.Custom && it.url.isBlank() } + Provider.Custom(url = ""),
+                selectedProvider = savedProvider,
             )
         }
 

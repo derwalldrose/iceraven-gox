@@ -39,6 +39,7 @@ class DefaultDohSettingsProviderTest {
             )
         every { appSettings.getDohSettingsMode() } returns Engine.DohSettingsMode.INCREASED
         every { appSettings.dohProviderUrl } returns DefaultDohSettingsProvider.nextDnsUri
+        every { appSettings.dohCustomProviderUrls } returns emptySet()
         every { appSettings.dohDefaultProviderUrl } returns DefaultDohSettingsProvider.cloudflareUri
         every { appSettings.dohExceptionsList } returns
             setOf(
@@ -199,6 +200,7 @@ class DefaultDohSettingsProviderTest {
         settingsProvider.setCustomProvider(url = customUrl)
 
         // Then verify that the engine DoH provider url is also updated in the app layer
+        verify { appSettings.dohCustomProviderUrls = setOf(customUrl) }
         verify { appSettings.dohProviderUrl = customUrl }
 
         // Then verify that the engine DoH provider url is also updated in the engine
