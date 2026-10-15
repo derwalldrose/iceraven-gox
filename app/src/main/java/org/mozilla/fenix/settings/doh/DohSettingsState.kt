@@ -27,6 +27,7 @@ internal data class DohSettingsState(
     val exceptionsList: List<String> = emptyList(),
     val isUserExceptionValid: Boolean = true,
     val isCustomProviderDialogOn: Boolean = false,
+    val editingCustomProvider: Provider.Custom? = null,
     val customProviderErrorState: CustomProviderErrorState = CustomProviderErrorState.Valid,
 ) : State
 

@@ -82,10 +82,29 @@ internal fun DohSettingsScreen(
     onCustomClicked: () -> Unit = {},
     onCustomCancelClicked: () -> Unit = {},
     onCustomAddClicked: (Provider.Custom, String) -> Unit = { _: Provider, _: String -> },
+    onCustomEditClicked: (Provider.Custom) -> Unit = {},
+    onCustomDeleteClicked: (Provider.Custom) -> Unit = {},
     onDefaultInfoClicked: () -> Unit = {},
     onIncreasedInfoClicked: () -> Unit = {},
     onMaxInfoClicked: () -> Unit = {},
 ) {
+    var pendingDelete by remember { mutableStateOf<Provider.Custom?>(null) }
+    pendingDelete?.let { provider ->
+        AlertDialog(
+            onDismissRequest = { pendingDelete = null },
+            title = { Text(text = stringResource(R.string.gox_doh_delete)) },
+            text = { Text(text = provider.url) },
+            confirmButton = {
+                TextButton(text = stringResource(R.string.gox_doh_delete), onClick = {
+                    onCustomDeleteClicked(provider)
+                    pendingDelete = null
+                })
+            },
+            dismissButton = {
+                TextButton(text = stringResource(R.string.preference_doh_provider_custom_dialog_cancel), onClick = { pendingDelete = null })
+            },
+        )
+    }
     Surface {
         Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
             DohSummary(onLearnMoreClicked = onLearnMoreClicked)
@@ -100,6 +119,16 @@ internal fun DohSettingsScreen(
                 onIncreasedInfoClicked = onIncreasedInfoClicked,
                 onMaxInfoClicked = onMaxInfoClicked,
             )
+
+            state.providers.filterIsInstance<Provider.Custom>().filter { it.url.isNotBlank() }.forEach { provider ->
+                Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp)) {
+                    Text(text = provider.url, style = FirefoxTheme.typography.body2)
+                    Row {
+                        TextButton(text = stringResource(R.string.gox_doh_edit), onClick = { onCustomEditClicked(provider) })
+                        TextButton(text = stringResource(R.string.gox_doh_delete), onClick = { pendingDelete = provider })
+                    }
+                }
+            }
 
             HorizontalDivider(modifier = Modifier.padding(8.dp))
 
@@ -320,9 +349,9 @@ private fun DohSelection(
     }
 
     if (state.isCustomProviderDialogOn) {
-        val newCustomProvider = Provider.Custom(url = "")
+        val newCustomProvider = state.editingCustomProvider ?: Provider.Custom(url = "")
         AlertDialogAddCustomProvider(
-            customProviderUrl = "",
+            customProviderUrl = newCustomProvider.url,
             customProviderErrorState = state.customProviderErrorState,
             onCustomCancelClicked = { onCustomCancelClicked() },
             onCustomAddClicked = { url ->
@@ -435,7 +464,7 @@ private fun AlertDialogAddCustomProvider(
     onCustomCancelClicked: () -> Unit,
     onCustomAddClicked: (String) -> Unit,
 ) {
-    var customProviderInput by remember { mutableStateOf(customProviderUrl) }
+    var customProviderInput by remember(customProviderUrl) { mutableStateOf(customProviderUrl) }
     val onCustomProviderInputChange: (String) -> Unit = { it -> customProviderInput = it }
     val nonHttpsString = stringResource(R.string.preference_doh_provider_custom_dialog_error_https)
     val invalidString = stringResource(R.string.preference_doh_provider_custom_dialog_error_invalid)
@@ -469,7 +498,7 @@ private fun AlertDialogAddCustomProvider(
         onDismissRequest = onCustomCancelClicked,
         confirmButton = {
             TextButton(
-                text = stringResource(R.string.preference_doh_provider_custom_dialog_add),
+                text = stringResource(if (customProviderUrl.isBlank()) R.string.preference_doh_provider_custom_dialog_add else R.string.gox_doh_save),
                 onClick = { onCustomAddClicked(customProviderInput) },
             )
         },

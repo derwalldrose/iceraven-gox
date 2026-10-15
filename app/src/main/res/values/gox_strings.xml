@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="browser_menu_dns_short" translatable="false">DNS</string>
+    <string name="gox_doh_edit">Edit</string>
+    <string name="gox_doh_delete">Delete</string>
+    <string name="gox_doh_save">Save</string>
 </resources>

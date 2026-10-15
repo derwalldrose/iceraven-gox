@@ -54,6 +54,17 @@ internal class DohSettingsMiddleware(
                 getSettingsProvider().setProtectionLevel(action.protectionLevel, action.provider)
             }
 
+            is DohSettingsRootAction.DeleteCustomClicked -> {
+                val provider = getSettingsProvider()
+                provider.removeCustomProvider(action.provider.url)
+                store.dispatch(
+                    DohSettingsRootAction.DohSettingsLoaded(
+                        provider.getProtectionLevels(), provider.getSelectedProtectionLevel(),
+                        provider.getDefaultProviders(), provider.getSelectedProvider(), provider.getExceptions(),
+                    )
+                )
+            }
+
             is DohSettingsRootAction.DohCustomProviderDialogAction.AddCustomClicked -> {
                 handleAddCustomProvider(store, action)
             }
@@ -110,7 +121,11 @@ internal class DohSettingsMiddleware(
     ) {
         try {
             val normalizedUrl = DohUrlValidator.validate(action.url)
-            getSettingsProvider().setCustomProvider(normalizedUrl)
+            val provider = getSettingsProvider()
+            provider.setCustomProvider(normalizedUrl)
+            if (action.customProvider.url.isNotBlank() && action.customProvider.url != normalizedUrl) {
+                provider.removeCustomProvider(action.customProvider.url)
+            }
             store.dispatch(
                 DohSettingsRootAction.DohCustomProviderDialogAction.ValidUrlDetected(
                     action.customProvider,

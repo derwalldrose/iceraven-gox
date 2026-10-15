@@ -31,8 +31,14 @@ internal fun dohSettingsReducer(state: DohSettingsState, action: DohSettingsActi
         }
 
         is DohSettingsRootAction.CustomClicked -> {
-            state.copy(isCustomProviderDialogOn = true)
+            state.copy(isCustomProviderDialogOn = true, editingCustomProvider = null, customProviderErrorState = CustomProviderErrorState.Valid)
         }
+
+        is DohSettingsRootAction.EditCustomClicked -> state.copy(
+            isCustomProviderDialogOn = true,
+            editingCustomProvider = action.provider,
+            customProviderErrorState = CustomProviderErrorState.Valid,
+        )
 
         is DohSettingsRootAction.DohCustomProviderDialogAction.NonHttpsUrlDetected -> {
             state.copy(
@@ -54,7 +60,7 @@ internal fun dohSettingsReducer(state: DohSettingsState, action: DohSettingsActi
                 isCustomProviderDialogOn = false,
                 customProviderErrorState = CustomProviderErrorState.Valid,
                 providers =
-                    (state.providers.filterNot { it is Provider.Custom && it.url == action.url } + savedProvider)
+                    (state.providers.filterNot { it is Provider.Custom && (it.url == action.url || it.url == action.customProvider.url) } + savedProvider)
                         .filterNot { it is Provider.Custom && it.url.isBlank() } + Provider.Custom(url = ""),
                 selectedProvider = savedProvider,
             )

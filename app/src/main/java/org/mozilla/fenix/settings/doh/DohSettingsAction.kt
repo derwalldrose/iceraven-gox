@@ -58,6 +58,12 @@ internal sealed class DohSettingsRootAction : DohSettingsAction {
     /** The user has clicked on a custom provider setting. */
     data object CustomClicked : DohSettingsRootAction()
 
+    /** Edit an existing custom endpoint. */
+    data class EditCustomClicked(val provider: Provider.Custom) : DohSettingsRootAction()
+
+    /** Remove a saved custom endpoint. */
+    data class DeleteCustomClicked(val provider: Provider.Custom) : DohSettingsRootAction()
+
     /** The user has clicked to see information about the default DoH level. */
     data object DefaultInfoClicked : DohSettingsAction
 

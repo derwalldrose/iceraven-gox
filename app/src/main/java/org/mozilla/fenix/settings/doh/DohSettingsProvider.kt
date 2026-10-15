@@ -23,6 +23,8 @@ internal interface DohSettingsProvider {
 
     fun setCustomProvider(url: String)
 
+    fun removeCustomProvider(url: String)
+
     fun setExceptions(exceptions: List<String>)
 }
 
@@ -54,7 +56,7 @@ internal class DefaultDohSettingsProvider(
             name = "NextDNS",
             default = dohDefaultProviderUrl == nextDnsUri,
         )
-    private val providerUrl = settings.dohProviderUrl
+    private val providerUrl get() = settings.dohProviderUrl
 
     private fun getCustomProviders(): List<Provider.Custom> {
         val savedUrls =
@@ -116,6 +118,16 @@ internal class DefaultDohSettingsProvider(
         settings.dohCustomProviderUrls = settings.dohCustomProviderUrls + url
         settings.dohProviderUrl = url
         engine.settings.dohProviderUrl = url
+    }
+
+    override fun removeCustomProvider(url: String) {
+        val remaining = getCustomProviders().map { it.url }.toSet() - url
+        settings.dohCustomProviderUrls = remaining
+        if (settings.dohProviderUrl == url) {
+            val fallback = remaining.sorted().firstOrNull() ?: cloudflareUri
+            settings.dohProviderUrl = fallback
+            engine.settings.dohProviderUrl = fallback
+        }
     }
 
     override fun setExceptions(exceptions: List<String>) {

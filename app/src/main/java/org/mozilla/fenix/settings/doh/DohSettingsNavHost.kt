@@ -57,6 +57,12 @@ internal fun DohSettingsNavHost(
                 onCustomClicked = {
                     store.dispatch(DohSettingsRootAction.CustomClicked)
                 },
+                onCustomEditClicked = { provider ->
+                    store.dispatch(DohSettingsRootAction.EditCustomClicked(provider))
+                },
+                onCustomDeleteClicked = { provider ->
+                    store.dispatch(DohSettingsRootAction.DeleteCustomClicked(provider))
+                },
                 onCustomCancelClicked = {
                     store.dispatch(DohSettingsRootAction.DohCustomProviderDialogAction.CancelClicked)
                 },
