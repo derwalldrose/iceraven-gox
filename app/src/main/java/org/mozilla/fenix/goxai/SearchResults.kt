@@ -22,7 +22,7 @@ class BrowserSearchTools(private val context: Context) {
         val installed = CompletableDeferred<WebExtension>()
         runtime.webExtensionController.ensureBuiltIn("resource://android/assets/gox-search/", "gox-search@local")
             .accept({ value -> if (value != null) installed.complete(value) else installed.completeExceptionally(IllegalStateException("读取扩展安装失败")) },
-                { error -> installed.completeExceptionally(error) })
+                { error -> installed.completeExceptionally(error ?: IllegalStateException("读取扩展安装失败，Gecko 未返回异常详情")) })
         val extension = installed.await()
         session = GeckoSession(GeckoSessionSettings.Builder().contextId(contextId).build()).also { tab ->
             tab.webExtensionController.setMessageDelegate(extension, object : WebExtension.MessageDelegate {
