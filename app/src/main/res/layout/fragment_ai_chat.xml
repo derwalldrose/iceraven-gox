@@ -14,7 +14,7 @@
         <TextView android:id="@+id/ai_clear" android:layout_width="48dp" android:layout_height="48dp" android:gravity="center" android:text="清空" android:textSize="12sp" android:textColor="#5F6368" android:background="?android:attr/selectableItemBackgroundBorderless" />
     </LinearLayout>
     <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#EEF0F2" />
-    <CheckBox android:id="@+id/ai_search" android:layout_width="match_parent" android:layout_height="48dp" android:text="后台浏览器搜索（发送问题到所选搜索引擎）" android:textColor="#202124" />
+    <CheckBox android:id="@+id/ai_search" android:layout_width="match_parent" android:layout_height="48dp" android:text="联网搜索（搜索 API）" android:textColor="#202124" />
     <WebView android:id="@+id/ai_messages" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:background="#FFFFFF" />
     <LinearLayout
         android:layout_width="match_parent" android:layout_height="wrap_content"

@@ -40,14 +40,16 @@ class AiChatActivity : AppCompatActivity() {
         val base = field("ai_base_url", "API 地址（包含 /v1）", AiDefaults.BASE_URL)
         val model = field("ai_model", "模型", AiDefaults.MODEL)
         val key = field("ai_api_key", "API Key", "", true)
-        val search = field("search_template", "搜索地址（包含 {query}）", BrowserSearchTools.DEFAULT_SEARCH)
-        AlertDialog.Builder(this).setTitle("AI 接口设置").setView(form)
+        val provider = field("search_provider", "搜索 API 类型：tavily / searxng", "tavily")
+        val search = field("search_api_url", "搜索 API 地址（SearXNG 填 /search）", SearchResults.DEFAULT_ENDPOINT)
+        val searchKey = field("search_api_key", "搜索 API Key（Tavily 需申请免费额度密钥）", "", true)
+        AlertDialog.Builder(this).setTitle("AI 与搜索 API 设置").setView(android.widget.ScrollView(this).apply { addView(form) })
             .setNegativeButton("取消", null).setPositiveButton("保存") { _, _ ->
                 val uri = android.net.Uri.parse(base.text.toString().trim())
-                if (uri.scheme != "https" || uri.host.isNullOrBlank() || !search.text.toString().startsWith("https://") || !search.text.toString().contains("{query}")) {
+                if (uri.scheme != "https" || uri.host.isNullOrBlank() || !search.text.toString().startsWith("https://") || provider.text.toString().trim() !in setOf("tavily", "searxng")) {
                     android.widget.Toast.makeText(this, "接口必须是有效 HTTPS 地址", android.widget.Toast.LENGTH_LONG).show()
                 } else prefs.edit().putString("ai_base_url", base.text.toString().trim().trimEnd('/'))
-                    .putString("search_template", search.text.toString().trim()).putString("ai_model", model.text.toString().trim()).putString("ai_api_key",key.text.toString().trim()).apply()
+                    .putString("search_provider", provider.text.toString().trim()).putString("search_api_url", search.text.toString().trim()).putString("search_api_key", searchKey.text.toString().trim()).putString("ai_model", model.text.toString().trim()).putString("ai_api_key",key.text.toString().trim()).apply()
             }.show()
     }
 }
