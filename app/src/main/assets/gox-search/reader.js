@@ -21,7 +21,7 @@
       seen.add(url);result.results.push({title,url,snippet:text(row).slice(0,1600)});
     };
     for(const row of document.querySelectorAll('#b_results .b_algo,.b_algo,.result,.g,[data-sokoban-container]')) {
-      const a=row.querySelector('h2 a,h3 a,a.result__a,a[data-testid="result-title-a"]') || row.querySelector('a:has(h3)');
+      const a=row.querySelector('h2 a,h3 a,a.result__a,a[data-testid="result-title-a"]') || row.querySelector('a:has(h2),a:has(h3)');
       add(a,row);
     }
     if(!result.results.length) {
