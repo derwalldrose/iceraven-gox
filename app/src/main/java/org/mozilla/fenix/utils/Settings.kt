@@ -3217,6 +3217,10 @@ class Settings(
         key = appContext.getPreferenceKey(R.string.pref_key_doh_txt_cached),
         default = "",
     )
+    var dohTxtCachedHost by stringPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_doh_txt_cached_host),
+        default = "",
+    )
 
     /** Retrieves the current DohSettingsMode based on trrMode */
     fun getDohSettingsMode(): Engine.DohSettingsMode {

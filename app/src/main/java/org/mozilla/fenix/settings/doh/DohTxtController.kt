@@ -14,9 +14,9 @@ import java.util.concurrent.Executors
  * Optional TXT preferred-edge overlay. Does not persist over [Settings.dohProviderUrl]
  * or protection-level prefs so disabling restores the previous DoH configuration.
  *
- * Gecko Default protection is TRR_MODE_OFF, so the overlay must raise the *engine*
- * mode to INCREASED (TRR_FIRST) without writing that into Settings.
- * Pin the TXT IP with network.trr.bootstrapAddr (bootstrapAddress is pre-FF89).
+ * Apply order matters: Gecko MaybeBootstrap no-ops while mode is TRR_OFF
+ * (Default protection), and URI changes start confirmation immediately.
+ * Prefs and mode must be in place before Engine.settings.dohProviderUrl is set.
  */
 internal object DohTxtController {
     private val io = Executors.newSingleThreadExecutor()
@@ -49,7 +49,7 @@ internal object DohTxtController {
             }
             return
         }
-        val cached = DohTxtLookup.parsePayload(settings.dohTxtCachedEndpoint)
+        val cached = cachedForCurrentHost(settings)
         if (cached != null) {
             main.post {
                 val status = runCatching { applyEndpoint(settings, engine, cached, cachedLabel = true) }
@@ -78,15 +78,25 @@ internal object DohTxtController {
     private fun applyBlocking(settings: Settings, engine: Engine): String {
         val hosts = settings.dohTxtHost.split(',', ' ', ';').filter { it.isNotBlank() }
         val live = DohTxtLookup.lookup(hosts.ifEmpty { listOf(DEFAULT_TXT_HOST) }).firstOrNull()
-        val cached = DohTxtLookup.parsePayload(settings.dohTxtCachedEndpoint)
+        val cached = cachedForCurrentHost(settings)
         val endpoint = live ?: cached ?: return "TXT 无 ip:port"
         if (live != null) {
             settings.dohTxtCachedEndpoint = live.toString()
+            settings.dohTxtCachedHost = hosts.firstOrNull() ?: DEFAULT_TXT_HOST
         }
         main.post {
             applyEndpoint(settings, engine, endpoint, cachedLabel = live == null)
         }
         return if (live != null) endpoint.toString() else "缓存 ${endpoint}"
+    }
+
+    private fun cachedForCurrentHost(settings: Settings): DohTxtLookup.Endpoint? {
+        val current = settings.dohTxtHost.split(',', ' ', ';').firstOrNull { it.isNotBlank() }
+            ?: DEFAULT_TXT_HOST
+        if (settings.dohTxtCachedHost.isNotBlank() && settings.dohTxtCachedHost != current) {
+            return null
+        }
+        return DohTxtLookup.parsePayload(settings.dohTxtCachedEndpoint)
     }
 
     private fun applyEndpoint(
@@ -103,10 +113,10 @@ internal object DohTxtController {
         val built = uri.buildUpon().encodedAuthority("${uri.host}:${endpoint.port}").build().toString()
         val engineMode = overlayMode(settings.getDohSettingsMode())
         if (built != lastBuilt || endpoint.ip != lastBootstrap) {
-            engine.settings.dohProviderUrl = built
-            engine.settings.dohSettingsMode = engineMode
-            setBootstrap(endpoint.ip)
             setConfirmationSkip(true)
+            setBootstrap(endpoint.ip)
+            engine.settings.dohSettingsMode = engineMode
+            engine.settings.dohProviderUrl = built
             lastBuilt = built
             lastBootstrap = endpoint.ip
         }
@@ -131,27 +141,36 @@ internal object DohTxtController {
     }
 
     fun restoreOriginal(settings: Settings, engine: Engine) {
+        setConfirmationSkip(false)
+        setBootstrap("")
         engine.settings.dohProviderUrl = settings.dohProviderUrl
         engine.settings.dohSettingsMode = settings.getDohSettingsMode()
-        setBootstrap("")
-        setConfirmationSkip(false)
     }
 
     private fun setBootstrap(ip: String) {
-        val prefs = GeckoBundle(2)
-        // FF89+ name; keep the old key for older GeckoView AARs.
-        prefs.putString("network.trr.bootstrapAddr", ip)
-        prefs.putString("network.trr.bootstrapAddress", ip)
-        EventDispatcher.getInstance().dispatch("GeckoView:SetDefaultPrefs", prefs)
-        EventDispatcher.getInstance().dispatch("GeckoView:SetUserPrefs", prefs)
+        setStringPref("network.trr.bootstrapAddr", ip)
+        setStringPref("network.trr.bootstrapAddress", ip)
     }
 
     private fun setConfirmationSkip(skip: Boolean) {
-        val prefs = GeckoBundle(1)
-        prefs.putString("network.trr.confirmationNS", if (skip) "skip" else "example.com")
-        EventDispatcher.getInstance().dispatch("GeckoView:SetDefaultPrefs", prefs)
-        EventDispatcher.getInstance().dispatch("GeckoView:SetUserPrefs", prefs)
+        setStringPref("network.trr.confirmationNS", if (skip) "skip" else "example.com")
     }
 
+    private fun setStringPref(name: String, value: String) {
+        val defaults = GeckoBundle(1)
+        defaults.putString(name, value)
+        EventDispatcher.getInstance().dispatch("GeckoView:SetDefaultPrefs", defaults)
+
+        val item = GeckoBundle(4)
+        item.putString("pref", name)
+        item.putString("branch", "user")
+        item.putInt("type", PREF_TYPE_STRING)
+        item.putString("value", value)
+        val request = GeckoBundle(1)
+        request.putBundleArray("prefs", arrayOf(item))
+        EventDispatcher.getInstance().dispatch("GeckoView:Preferences:SetPref", request)
+    }
+
+    private const val PREF_TYPE_STRING = 32
     private const val TAG = "DohTxt"
 }
