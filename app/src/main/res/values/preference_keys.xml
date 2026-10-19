@@ -264,6 +264,7 @@
     <string name="pref_key_doh_txt_enabled" translatable="false">pref_key_doh_txt_enabled</string>
     <string name="pref_key_doh_txt_host" translatable="false">pref_key_doh_txt_host</string>
     <string name="pref_key_doh_txt_uri" translatable="false">pref_key_doh_txt_uri</string>
+    <string name="pref_key_doh_txt_cached" translatable="false">pref_key_doh_txt_cached</string>
 
     <!-- Tracking Protection Settings -->
     <string name="pref_key_etp_learn_more" translatable="false">pref_key_etp_learn_more</string>

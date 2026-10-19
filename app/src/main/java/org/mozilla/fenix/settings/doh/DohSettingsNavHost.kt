@@ -86,7 +86,6 @@ internal fun DohSettingsNavHost(
                 onDohTxtToggled = { store.dispatch(DohSettingsRootAction.DohTxtToggled(it)) },
                 onDohTxtHostChanged = { store.dispatch(DohSettingsRootAction.DohTxtHostChanged(it)) },
                 onDohTxtUriChanged = { store.dispatch(DohSettingsRootAction.DohTxtUriChanged(it)) },
-                onDohTxtApply = { store.dispatch(DohSettingsRootAction.DohTxtApply) },
             )
         }
 

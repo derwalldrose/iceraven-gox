@@ -5,8 +5,6 @@
     <string name="gox_doh_delete">Delete</string>
     <string name="gox_doh_save">Save</string>
     <string name="gox_doh_txt_title" translatable="false">dohtxt</string>
-    <string name="gox_doh_txt_summary" translatable="false">Read TXT ip:port (ustxt/krtxt), connect with DoH hostname SNI. Original DoH above is unchanged and restored when this is off.</string>
-    <string name="gox_doh_txt_host" translatable="false">TXT host (ustxt.270376.xyz)</string>
-    <string name="gox_doh_txt_uri" translatable="false">DoH URL (https://host/ice)</string>
-    <string name="gox_doh_txt_apply" translatable="false">Apply dohtxt</string>
+    <string name="gox_doh_txt_host" translatable="false">TXT</string>
+    <string name="gox_doh_txt_uri" translatable="false">DoH</string>
 </resources>

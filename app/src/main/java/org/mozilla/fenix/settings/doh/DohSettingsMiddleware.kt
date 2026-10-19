@@ -5,6 +5,8 @@
 package org.mozilla.fenix.settings.doh
 
 import androidx.navigation.NavController
+import android.os.Handler
+import android.os.Looper
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
 
@@ -16,6 +18,8 @@ internal class DohSettingsMiddleware(
     private val openUrlInBrowser: (String) -> Unit,
     private val exitDohSettings: () -> Unit,
 ) : Middleware<DohSettingsState, DohSettingsAction> {
+    private val debounce = Handler(Looper.getMainLooper())
+    private val debounceMs = 800L
 
     override fun invoke(
         store: Store<DohSettingsState, DohSettingsAction>,
@@ -27,6 +31,7 @@ internal class DohSettingsMiddleware(
         when (action) {
             Init -> {
                 store.dispatch(loaded(getSettingsProvider(), getAppSettings()))
+                overlayTxt(store)
             }
 
             is BackClicked -> {
@@ -112,11 +117,12 @@ internal class DohSettingsMiddleware(
             }
             is DohSettingsRootAction.DohTxtHostChanged -> {
                 getAppSettings().dohTxtHost = action.host
+                debounceOverlay(store)
             }
             is DohSettingsRootAction.DohTxtUriChanged -> {
                 getAppSettings().dohTxtUri = action.uri
+                debounceOverlay(store)
             }
-            is DohSettingsRootAction.DohTxtApply -> overlayTxt(store)
             else -> {}
         }
     }
@@ -195,8 +201,14 @@ internal class DohSettingsMiddleware(
     )
 
     private fun overlayTxt(store: Store<DohSettingsState, DohSettingsAction>) {
+        debounce.removeCallbacksAndMessages(null)
         DohTxtController.applyFromSettings(getAppSettings(), getEngine()) { status ->
             store.dispatch(DohSettingsRootAction.DohTxtStatus(status))
         }
+    }
+
+    private fun debounceOverlay(store: Store<DohSettingsState, DohSettingsAction>) {
+        debounce.removeCallbacksAndMessages(null)
+        debounce.postDelayed({ overlayTxt(store) }, debounceMs)
     }
 }

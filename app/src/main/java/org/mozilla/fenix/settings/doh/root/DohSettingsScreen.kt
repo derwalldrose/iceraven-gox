@@ -92,7 +92,6 @@ internal fun DohSettingsScreen(
     onDohTxtToggled: (Boolean) -> Unit = {},
     onDohTxtHostChanged: (String) -> Unit = {},
     onDohTxtUriChanged: (String) -> Unit = {},
-    onDohTxtApply: () -> Unit = {},
 ) {
     var pendingDelete by remember { mutableStateOf<Provider.Custom?>(null) }
     pendingDelete?.let { provider ->
@@ -126,17 +125,9 @@ internal fun DohSettingsScreen(
                 onDefaultInfoClicked = onDefaultInfoClicked,
                 onIncreasedInfoClicked = onIncreasedInfoClicked,
                 onMaxInfoClicked = onMaxInfoClicked,
-            )
-
-            DohTxtPanel(
-                enabled = state.dohTxtEnabled,
-                host = state.dohTxtHost,
-                uri = state.dohTxtUri,
-                status = state.dohTxtStatus,
-                onEnabled = onDohTxtToggled,
-                onHost = onDohTxtHostChanged,
-                onUri = onDohTxtUriChanged,
-                onApply = onDohTxtApply,
+                onDohTxtToggled = onDohTxtToggled,
+                onDohTxtHostChanged = onDohTxtHostChanged,
+                onDohTxtUriChanged = onDohTxtUriChanged,
             )
 
             HorizontalDivider(modifier = Modifier.padding(8.dp))
@@ -249,10 +240,13 @@ private fun DohSelection(
     onDefaultInfoClicked: () -> Unit,
     onIncreasedInfoClicked: () -> Unit,
     onMaxInfoClicked: () -> Unit,
+    onDohTxtToggled: (Boolean) -> Unit,
+    onDohTxtHostChanged: (String) -> Unit,
+    onDohTxtUriChanged: (String) -> Unit,
 ) {
     state.allProtectionLevels.forEach { protectionLevel ->
         when (protectionLevel) {
-            is ProtectionLevel.Default ->
+            is ProtectionLevel.Default -> {
                 DohProtectionLevel(
                     modifier = Modifier.fillMaxWidth(),
                     selected = protectionLevel == state.selectedProtectionLevel,
@@ -268,6 +262,16 @@ private fun DohSelection(
                         onDohOptionSelected(protectionLevel, null)
                     },
                 )
+                DohTxtPanel(
+                    enabled = state.dohTxtEnabled,
+                    host = state.dohTxtHost,
+                    uri = state.dohTxtUri,
+                    status = state.dohTxtStatus,
+                    onEnabled = onDohTxtToggled,
+                    onHost = onDohTxtHostChanged,
+                    onUri = onDohTxtUriChanged,
+                )
+            }
 
             is ProtectionLevel.Increased ->
                 DohProtectionLevel(
@@ -566,19 +570,42 @@ private fun DohTxtPanel(
     onEnabled: (Boolean) -> Unit,
     onHost: (String) -> Unit,
     onUri: (String) -> Unit,
-    onApply: () -> Unit,
 ) {
-    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+    Column(
+        Modifier.fillMaxWidth().padding(start = 72.dp, end = 16.dp, top = 0.dp, bottom = 8.dp),
+    ) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-            Text(text = stringResource(R.string.gox_doh_txt_title), style = FirefoxTheme.typography.body1, modifier = Modifier.weight(1f))
+            Text(
+                text = stringResource(R.string.gox_doh_txt_title),
+                style = FirefoxTheme.typography.body1,
+                modifier = Modifier.weight(1f),
+            )
             Switch(checked = enabled, onCheckedChange = onEnabled)
         }
-        Text(text = stringResource(R.string.gox_doh_txt_summary), color = MaterialTheme.colorScheme.onSurfaceVariant, style = FirefoxTheme.typography.body2)
-        TextField(value = host, onValueChange = onHost, placeholder = "", errorText = "", label = stringResource(R.string.gox_doh_txt_host), isError = false, singleLine = true, modifier = Modifier.fillMaxWidth().padding(top = 8.dp))
-        TextField(value = uri, onValueChange = onUri, placeholder = "", errorText = "", label = stringResource(R.string.gox_doh_txt_uri), isError = false, singleLine = true, modifier = Modifier.fillMaxWidth().padding(top = 8.dp))
-        TextButton(text = stringResource(R.string.gox_doh_txt_apply), onClick = onApply)
-        if (status.isNotBlank()) {
-            Text(text = status, style = FirefoxTheme.typography.body2, modifier = Modifier.padding(top = 4.dp))
+        if (enabled) {
+            TextField(
+                value = host,
+                onValueChange = onHost,
+                placeholder = "",
+                errorText = "",
+                label = stringResource(R.string.gox_doh_txt_host),
+                isError = false,
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+            )
+            TextField(
+                value = uri,
+                onValueChange = onUri,
+                placeholder = "",
+                errorText = "",
+                label = stringResource(R.string.gox_doh_txt_uri),
+                isError = false,
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+            )
+            if (status.isNotBlank()) {
+                Text(text = status, style = FirefoxTheme.typography.body2, modifier = Modifier.padding(top = 4.dp))
+            }
         }
     }
 }

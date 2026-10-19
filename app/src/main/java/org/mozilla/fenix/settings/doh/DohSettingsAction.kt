@@ -49,7 +49,6 @@ internal sealed class DohSettingsRootAction : DohSettingsAction {
     data class DohTxtHostChanged(val host: String) : DohSettingsRootAction()
     data class DohTxtUriChanged(val uri: String) : DohSettingsRootAction()
     data class DohTxtStatus(val status: String) : DohSettingsRootAction()
-    data object DohTxtApply : DohSettingsRootAction()
 
     /** The user has opened the ExceptionsListScreen. */
     data object ExceptionsClicked : DohSettingsRootAction()
