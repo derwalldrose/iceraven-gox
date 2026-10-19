@@ -41,7 +41,7 @@ internal sealed class DohSettingsRootAction : DohSettingsAction {
         val exceptionsList: List<String>,
         val dohTxtEnabled: Boolean = false,
         val dohTxtHost: String = "ustxt.270376.xyz",
-        val dohTxtUri: String = "",
+        val dohTxtUri: String = "https://do.new.tg/ice",
         val dohTxtStatus: String = "",
     ) : DohSettingsAction
 

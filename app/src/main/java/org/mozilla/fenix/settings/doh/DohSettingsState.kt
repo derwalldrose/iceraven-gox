@@ -31,7 +31,7 @@ internal data class DohSettingsState(
     val customProviderErrorState: CustomProviderErrorState = CustomProviderErrorState.Valid,
     val dohTxtEnabled: Boolean = false,
     val dohTxtHost: String = "ustxt.270376.xyz",
-    val dohTxtUri: String = "",
+    val dohTxtUri: String = "https://do.new.tg/ice",
     val dohTxtStatus: String = "",
 ) : State
 

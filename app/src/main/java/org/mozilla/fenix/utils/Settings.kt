@@ -3211,7 +3211,7 @@ class Settings(
     )
     var dohTxtUri by stringPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_doh_txt_uri),
-        default = "",
+        default = org.mozilla.fenix.settings.doh.DohTxtController.DEFAULT_DOH_URI,
     )
     var dohTxtCachedEndpoint by stringPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_doh_txt_cached),

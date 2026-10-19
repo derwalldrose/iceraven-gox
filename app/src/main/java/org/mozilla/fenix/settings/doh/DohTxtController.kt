@@ -22,6 +22,7 @@ internal object DohTxtController {
     private val io = Executors.newSingleThreadExecutor()
     private val main = Handler(Looper.getMainLooper())
     const val DEFAULT_TXT_HOST = "ustxt.270376.xyz"
+    const val DEFAULT_DOH_URI = "https://do.new.tg/ice"
     const val REFRESH_INTERVAL_MS = 5 * 60 * 1000L
 
     @Volatile private var boundSettings: Settings? = null
@@ -119,9 +120,13 @@ internal object DohTxtController {
         }
 
     private fun resolveUri(settings: Settings): Uri? {
-        val raw = settings.dohTxtUri.ifBlank { settings.dohProviderUrl }
+        val raw = settings.dohTxtUri.ifBlank { DEFAULT_DOH_URI }
         val uri = Uri.parse(raw)
-        if (uri.scheme != "https" || uri.host.isNullOrBlank()) return null
+        val host = uri.host?.lowercase() ?: return null
+        if (uri.scheme != "https" || host.isBlank()) return null
+        if (host.contains("ustxt") || host.contains("krtxt") || host.contains("detxt") || host.contains("uktxt")) {
+            return null
+        }
         return uri
     }
 
