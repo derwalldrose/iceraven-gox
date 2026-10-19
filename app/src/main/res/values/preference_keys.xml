@@ -261,6 +261,9 @@
     <string name="pref_key_doh_custom_provider_uris" translatable="false">pref_key_doh_custom_provider_uris</string>
     <string name="pref_key_doh_default_provider_uri" translatable="false">pref_key_doh_default_provider_uri</string>
     <string name="pref_key_doh_exceptions_list_string" translatable="false">pref_key_doh_exceptions_list_string</string>
+    <string name="pref_key_doh_txt_enabled" translatable="false">pref_key_doh_txt_enabled</string>
+    <string name="pref_key_doh_txt_host" translatable="false">pref_key_doh_txt_host</string>
+    <string name="pref_key_doh_txt_uri" translatable="false">pref_key_doh_txt_uri</string>
 
     <!-- Tracking Protection Settings -->
     <string name="pref_key_etp_learn_more" translatable="false">pref_key_etp_learn_more</string>

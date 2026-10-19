@@ -11,6 +11,8 @@ import mozilla.components.lib.state.Store
 internal class DohSettingsMiddleware(
     private val getNavController: () -> NavController,
     private val getSettingsProvider: () -> DohSettingsProvider,
+    private val getAppSettings: () -> org.mozilla.fenix.utils.Settings,
+    private val getEngine: () -> mozilla.components.concept.engine.Engine,
     private val openUrlInBrowser: (String) -> Unit,
     private val exitDohSettings: () -> Unit,
 ) : Middleware<DohSettingsState, DohSettingsAction> {
@@ -24,16 +26,7 @@ internal class DohSettingsMiddleware(
 
         when (action) {
             Init -> {
-                // we dispatch another action that the reducer can handle
-                store.dispatch(
-                    DohSettingsRootAction.DohSettingsLoaded(
-                        allProtectionLevels = getSettingsProvider().getProtectionLevels(),
-                        selectedProtectionLevel = getSettingsProvider().getSelectedProtectionLevel(),
-                        exceptionsList = getSettingsProvider().getExceptions(),
-                        providers = getSettingsProvider().getDefaultProviders(),
-                        selectedProvider = getSettingsProvider().getSelectedProvider(),
-                    )
-                )
+                store.dispatch(loaded(getSettingsProvider(), getAppSettings()))
             }
 
             is BackClicked -> {
@@ -52,6 +45,7 @@ internal class DohSettingsMiddleware(
 
             is DohSettingsRootAction.DohOptionSelected -> {
                 getSettingsProvider().setProtectionLevel(action.protectionLevel, action.provider)
+                overlayTxt(store)
             }
 
             is DohSettingsRootAction.DeleteCustomClicked -> {
@@ -111,6 +105,18 @@ internal class DohSettingsMiddleware(
                 handleSaveException(store, action)
             }
 
+            is DohSettingsRootAction.DohTxtToggled -> {
+                val settings = getAppSettings()
+                settings.dohTxtEnabled = action.enabled
+                overlayTxt(store)
+            }
+            is DohSettingsRootAction.DohTxtHostChanged -> {
+                getAppSettings().dohTxtHost = action.host
+            }
+            is DohSettingsRootAction.DohTxtUriChanged -> {
+                getAppSettings().dohTxtUri = action.uri
+            }
+            is DohSettingsRootAction.DohTxtApply -> overlayTxt(store)
             else -> {}
         }
     }
@@ -169,6 +175,28 @@ internal class DohSettingsMiddleware(
             store.dispatch(BackClicked)
         } catch (e: UrlValidationException.InvalidUrlException) {
             store.dispatch(ExceptionsAction.InvalidUrlDetected)
+        }
+    }
+
+    private fun loaded(
+        provider: DohSettingsProvider,
+        settings: org.mozilla.fenix.utils.Settings,
+        status: String = "",
+    ) = DohSettingsRootAction.DohSettingsLoaded(
+        allProtectionLevels = provider.getProtectionLevels(),
+        selectedProtectionLevel = provider.getSelectedProtectionLevel(),
+        exceptionsList = provider.getExceptions(),
+        providers = provider.getDefaultProviders(),
+        selectedProvider = provider.getSelectedProvider(),
+        dohTxtEnabled = settings.dohTxtEnabled,
+        dohTxtHost = settings.dohTxtHost,
+        dohTxtUri = settings.dohTxtUri,
+        dohTxtStatus = status,
+    )
+
+    private fun overlayTxt(store: Store<DohSettingsState, DohSettingsAction>) {
+        DohTxtController.applyFromSettings(getAppSettings(), getEngine()) { status ->
+            store.dispatch(DohSettingsRootAction.DohTxtStatus(status))
         }
     }
 }

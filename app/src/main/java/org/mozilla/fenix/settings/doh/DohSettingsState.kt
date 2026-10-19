@@ -29,6 +29,10 @@ internal data class DohSettingsState(
     val isCustomProviderDialogOn: Boolean = false,
     val editingCustomProvider: Provider.Custom? = null,
     val customProviderErrorState: CustomProviderErrorState = CustomProviderErrorState.Valid,
+    val dohTxtEnabled: Boolean = false,
+    val dohTxtHost: String = "ustxt.270376.xyz",
+    val dohTxtUri: String = "",
+    val dohTxtStatus: String = "",
 ) : State
 
 /** Represents the protection level for DoH settings. */

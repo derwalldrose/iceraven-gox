@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Switch
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -88,6 +89,10 @@ internal fun DohSettingsScreen(
     onDefaultInfoClicked: () -> Unit = {},
     onIncreasedInfoClicked: () -> Unit = {},
     onMaxInfoClicked: () -> Unit = {},
+    onDohTxtToggled: (Boolean) -> Unit = {},
+    onDohTxtHostChanged: (String) -> Unit = {},
+    onDohTxtUriChanged: (String) -> Unit = {},
+    onDohTxtApply: () -> Unit = {},
 ) {
     var pendingDelete by remember { mutableStateOf<Provider.Custom?>(null) }
     pendingDelete?.let { provider ->
@@ -121,6 +126,17 @@ internal fun DohSettingsScreen(
                 onDefaultInfoClicked = onDefaultInfoClicked,
                 onIncreasedInfoClicked = onIncreasedInfoClicked,
                 onMaxInfoClicked = onMaxInfoClicked,
+            )
+
+            DohTxtPanel(
+                enabled = state.dohTxtEnabled,
+                host = state.dohTxtHost,
+                uri = state.dohTxtUri,
+                status = state.dohTxtStatus,
+                onEnabled = onDohTxtToggled,
+                onHost = onDohTxtHostChanged,
+                onUri = onDohTxtUriChanged,
+                onApply = onDohTxtApply,
             )
 
             HorizontalDivider(modifier = Modifier.padding(8.dp))
@@ -538,6 +554,32 @@ private fun TextWithUnderline(
             modifier = Modifier.fillMaxWidth().height(1.dp),
             color = underlineColor,
         )
+    }
+}
+
+@Composable
+private fun DohTxtPanel(
+    enabled: Boolean,
+    host: String,
+    uri: String,
+    status: String,
+    onEnabled: (Boolean) -> Unit,
+    onHost: (String) -> Unit,
+    onUri: (String) -> Unit,
+    onApply: () -> Unit,
+) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            Text(text = stringResource(R.string.gox_doh_txt_title), style = FirefoxTheme.typography.body1, modifier = Modifier.weight(1f))
+            Switch(checked = enabled, onCheckedChange = onEnabled)
+        }
+        Text(text = stringResource(R.string.gox_doh_txt_summary), color = MaterialTheme.colorScheme.onSurfaceVariant, style = FirefoxTheme.typography.body2)
+        TextField(value = host, onValueChange = onHost, placeholder = "", errorText = "", label = stringResource(R.string.gox_doh_txt_host), isError = false, singleLine = true, modifier = Modifier.fillMaxWidth().padding(top = 8.dp))
+        TextField(value = uri, onValueChange = onUri, placeholder = "", errorText = "", label = stringResource(R.string.gox_doh_txt_uri), isError = false, singleLine = true, modifier = Modifier.fillMaxWidth().padding(top = 8.dp))
+        TextButton(text = stringResource(R.string.gox_doh_txt_apply), onClick = onApply)
+        if (status.isNotBlank()) {
+            Text(text = status, style = FirefoxTheme.typography.body2, modifier = Modifier.padding(top = 4.dp))
+        }
     }
 }
 

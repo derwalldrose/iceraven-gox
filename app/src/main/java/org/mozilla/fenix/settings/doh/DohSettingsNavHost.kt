@@ -83,6 +83,10 @@ internal fun DohSettingsNavHost(
                 onMaxInfoClicked = {
                     store.dispatch(DohSettingsRootAction.MaxInfoClicked)
                 },
+                onDohTxtToggled = { store.dispatch(DohSettingsRootAction.DohTxtToggled(it)) },
+                onDohTxtHostChanged = { store.dispatch(DohSettingsRootAction.DohTxtHostChanged(it)) },
+                onDohTxtUriChanged = { store.dispatch(DohSettingsRootAction.DohTxtUriChanged(it)) },
+                onDohTxtApply = { store.dispatch(DohSettingsRootAction.DohTxtApply) },
             )
         }
 

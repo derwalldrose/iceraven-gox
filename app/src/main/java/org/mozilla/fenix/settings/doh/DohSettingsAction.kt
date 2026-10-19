@@ -39,7 +39,17 @@ internal sealed class DohSettingsRootAction : DohSettingsAction {
         val providers: List<Provider>,
         val selectedProvider: Provider?,
         val exceptionsList: List<String>,
+        val dohTxtEnabled: Boolean = false,
+        val dohTxtHost: String = "ustxt.270376.xyz",
+        val dohTxtUri: String = "",
+        val dohTxtStatus: String = "",
     ) : DohSettingsAction
+
+    data class DohTxtToggled(val enabled: Boolean) : DohSettingsRootAction()
+    data class DohTxtHostChanged(val host: String) : DohSettingsRootAction()
+    data class DohTxtUriChanged(val uri: String) : DohSettingsRootAction()
+    data class DohTxtStatus(val status: String) : DohSettingsRootAction()
+    data object DohTxtApply : DohSettingsRootAction()
 
     /** The user has opened the ExceptionsListScreen. */
     data object ExceptionsClicked : DohSettingsRootAction()

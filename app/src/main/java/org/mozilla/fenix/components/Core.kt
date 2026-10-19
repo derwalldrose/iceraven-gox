@@ -265,6 +265,7 @@ class Core(
             )
             .also {
                 WebCompatFeature.install(it)
+                org.mozilla.fenix.settings.doh.DohTxtController.applyFromSettings(context.components.settings, it)
             }
     }
 

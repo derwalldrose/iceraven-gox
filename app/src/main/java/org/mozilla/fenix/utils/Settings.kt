@@ -3200,6 +3200,20 @@ class Settings(
             default = emptySet(),
         )
 
+    /** Optional TXT preferred-edge overlay; original DoH prefs stay untouched when this is toggled. */
+    var dohTxtEnabled by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_doh_txt_enabled),
+        default = false,
+    )
+    var dohTxtHost by stringPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_doh_txt_host),
+        default = org.mozilla.fenix.settings.doh.DohTxtController.DEFAULT_TXT_HOST,
+    )
+    var dohTxtUri by stringPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_doh_txt_uri),
+        default = "",
+    )
+
     /** Retrieves the current DohSettingsMode based on trrMode */
     fun getDohSettingsMode(): Engine.DohSettingsMode {
         return when (trrMode) {

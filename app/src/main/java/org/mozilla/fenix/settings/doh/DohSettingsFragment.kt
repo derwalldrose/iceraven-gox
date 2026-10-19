@@ -43,6 +43,8 @@ internal class DohSettingsFragment : Fragment(), SystemInsetsPaddedFragment {
                             listOf(
                                 DohSettingsMiddleware(
                                     getSettingsProvider = { settingsProvider },
+                                    getAppSettings = { requireContext().components.settings },
+                                    getEngine = { requireContext().components.core.engine },
                                     getNavController = { composeNavController },
                                     openUrlInBrowser = { url ->
                                         navController.openToBrowser()
