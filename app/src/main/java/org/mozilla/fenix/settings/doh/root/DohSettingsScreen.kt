@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Switch
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -571,40 +570,44 @@ private fun DohTxtPanel(
     onHost: (String) -> Unit,
     onUri: (String) -> Unit,
 ) {
-    Column(
-        Modifier.fillMaxWidth().padding(start = 72.dp, end = 16.dp, top = 0.dp, bottom = 8.dp),
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth().padding(start = 72.dp, top = 6.dp, end = 16.dp, bottom = 6.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-            Text(
-                text = stringResource(R.string.gox_doh_txt_title),
-                style = FirefoxTheme.typography.body1,
-                modifier = Modifier.weight(1f),
-            )
-            Switch(checked = enabled, onCheckedChange = onEnabled)
-        }
-        if (enabled) {
-            TextField(
-                value = host,
-                onValueChange = onHost,
-                placeholder = "",
-                errorText = "",
-                label = stringResource(R.string.gox_doh_txt_host),
-                isError = false,
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-            )
-            TextField(
-                value = uri,
-                onValueChange = onUri,
-                placeholder = "",
-                errorText = "",
-                label = stringResource(R.string.gox_doh_txt_uri),
-                isError = false,
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-            )
-            if (status.isNotBlank()) {
-                Text(text = status, style = FirefoxTheme.typography.body2, modifier = Modifier.padding(top = 4.dp))
+        RadioButton(
+            selected = enabled,
+            onClick = { onEnabled(!enabled) },
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Column(
+            modifier = Modifier.weight(1f).align(Alignment.Top),
+            horizontalAlignment = Alignment.Start,
+        ) {
+            Text(text = stringResource(R.string.gox_doh_txt_title), style = FirefoxTheme.typography.body1)
+            if (enabled) {
+                TextField(
+                    value = host,
+                    onValueChange = onHost,
+                    placeholder = "",
+                    errorText = "",
+                    label = stringResource(R.string.gox_doh_txt_host),
+                    isError = false,
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                )
+                TextField(
+                    value = uri,
+                    onValueChange = onUri,
+                    placeholder = "",
+                    errorText = "",
+                    label = stringResource(R.string.gox_doh_txt_uri),
+                    isError = false,
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                )
+                if (status.isNotBlank()) {
+                    Text(text = status, style = FirefoxTheme.typography.body2, modifier = Modifier.padding(top = 4.dp))
+                }
             }
         }
     }
