@@ -13,7 +13,10 @@ import java.util.concurrent.Executors
 /**
  * Optional TXT preferred-edge overlay. Does not persist over [Settings.dohProviderUrl]
  * or protection-level prefs so disabling restores the previous DoH configuration.
- * TXT is looked up on a timer and cached; the UI does not require a manual apply.
+ *
+ * Gecko Default protection is TRR_MODE_OFF, so the overlay must raise the *engine*
+ * mode to INCREASED (TRR_FIRST) without writing that into Settings.
+ * Pin the TXT IP with network.trr.bootstrapAddr (bootstrapAddress is pre-FF89).
  */
 internal object DohTxtController {
     private val io = Executors.newSingleThreadExecutor()
@@ -39,16 +42,26 @@ internal object DohTxtController {
         if (!settings.dohTxtEnabled) {
             lastBuilt = ""
             lastBootstrap = ""
-            restoreOriginal(settings, engine)
-            onStatus("")
+            main.post {
+                restoreOriginal(settings, engine)
+                onStatus("")
+            }
             return
+        }
+        val cached = DohTxtLookup.parsePayload(settings.dohTxtCachedEndpoint)
+        if (cached != null) {
+            main.post {
+                val status = runCatching { applyEndpoint(settings, engine, cached, cachedLabel = true) }
+                    .getOrElse { "缓存 ${cached}" }
+                onStatus(status)
+            }
         }
         io.execute {
             val status = runCatching { applyBlocking(settings, engine) }.fold(
                 onSuccess = { it },
                 onFailure = { error ->
                     Log.w(TAG, "dohtxt apply failed", error)
-                    cachedStatus(settings, engine, error.message?.take(80) ?: "TXT 查询失败")
+                    cached?.let { "缓存 ${it}" } ?: (error.message?.take(80) ?: "TXT 查询失败")
                 },
             )
             main.post {
@@ -62,15 +75,6 @@ internal object DohTxtController {
     }
 
     private fun applyBlocking(settings: Settings, engine: Engine): String {
-        val mode = settings.getDohSettingsMode()
-        if (mode == Engine.DohSettingsMode.OFF) {
-            restoreOriginal(settings, engine)
-            return "Off 时 dohtxt 不生效"
-        }
-        val uri = Uri.parse(settings.dohTxtUri.ifBlank { settings.dohProviderUrl })
-        if (uri.scheme != "https" || uri.host.isNullOrBlank()) {
-            return "需要 https://域名/ice"
-        }
         val hosts = settings.dohTxtHost.split(',', ' ', ';').filter { it.isNotBlank() }
         val live = DohTxtLookup.lookup(hosts.ifEmpty { listOf(DEFAULT_TXT_HOST) }).firstOrNull()
         val cached = DohTxtLookup.parsePayload(settings.dohTxtCachedEndpoint)
@@ -78,45 +82,70 @@ internal object DohTxtController {
         if (live != null) {
             settings.dohTxtCachedEndpoint = live.toString()
         }
-        val built = uri.buildUpon().encodedAuthority("${uri.host}:${endpoint.port}").build().toString()
         main.post {
-            if (built != lastBuilt || endpoint.ip != lastBootstrap) {
-                engine.settings.dohProviderUrl = built
-                engine.settings.dohSettingsMode = mode
-                setBootstrap(endpoint.ip)
-                lastBuilt = built
-                lastBootstrap = endpoint.ip
-            }
+            applyEndpoint(settings, engine, endpoint, cachedLabel = live == null)
         }
         return if (live != null) endpoint.toString() else "缓存 ${endpoint}"
     }
 
-    private fun cachedStatus(settings: Settings, engine: Engine, error: String): String {
-        val cached = DohTxtLookup.parsePayload(settings.dohTxtCachedEndpoint) ?: return error
-        val uri = Uri.parse(settings.dohTxtUri.ifBlank { settings.dohProviderUrl })
-        if (uri.scheme != "https" || uri.host.isNullOrBlank()) return error
-        val built = uri.buildUpon().encodedAuthority("${uri.host}:${cached.port}").build().toString()
-        val mode = settings.getDohSettingsMode()
-        main.post {
-            engine.settings.dohProviderUrl = built
-            engine.settings.dohSettingsMode = mode
-            setBootstrap(cached.ip)
-            lastBuilt = built
-            lastBootstrap = cached.ip
+    private fun applyEndpoint(
+        settings: Settings,
+        engine: Engine,
+        endpoint: DohTxtLookup.Endpoint,
+        cachedLabel: Boolean,
+    ): String {
+        if (settings.getDohSettingsMode() == Engine.DohSettingsMode.OFF) {
+            restoreOriginal(settings, engine)
+            return "Off 时 dohtxt 不生效"
         }
-        return "缓存 ${cached}"
+        val uri = resolveUri(settings) ?: return "需要 https://域名/ice"
+        val built = uri.buildUpon().encodedAuthority("${uri.host}:${endpoint.port}").build().toString()
+        val engineMode = overlayMode(settings.getDohSettingsMode())
+        if (built != lastBuilt || endpoint.ip != lastBootstrap) {
+            engine.settings.dohProviderUrl = built
+            engine.settings.dohSettingsMode = engineMode
+            setBootstrap(endpoint.ip)
+            setConfirmationSkip(true)
+            lastBuilt = built
+            lastBootstrap = endpoint.ip
+        }
+        return if (cachedLabel) "缓存 ${endpoint}" else endpoint.toString()
+    }
+
+    private fun overlayMode(stored: Engine.DohSettingsMode): Engine.DohSettingsMode =
+        when (stored) {
+            Engine.DohSettingsMode.MAX -> Engine.DohSettingsMode.MAX
+            else -> Engine.DohSettingsMode.INCREASED
+        }
+
+    private fun resolveUri(settings: Settings): Uri? {
+        val raw = settings.dohTxtUri.ifBlank { settings.dohProviderUrl }
+        val uri = Uri.parse(raw)
+        if (uri.scheme != "https" || uri.host.isNullOrBlank()) return null
+        return uri
     }
 
     fun restoreOriginal(settings: Settings, engine: Engine) {
         engine.settings.dohProviderUrl = settings.dohProviderUrl
         engine.settings.dohSettingsMode = settings.getDohSettingsMode()
         setBootstrap("")
+        setConfirmationSkip(false)
     }
 
     private fun setBootstrap(ip: String) {
-        val prefs = GeckoBundle(1)
+        val prefs = GeckoBundle(2)
+        // FF89+ name; keep the old key for older GeckoView AARs.
+        prefs.putString("network.trr.bootstrapAddr", ip)
         prefs.putString("network.trr.bootstrapAddress", ip)
         EventDispatcher.getInstance().dispatch("GeckoView:SetDefaultPrefs", prefs)
+        EventDispatcher.getInstance().dispatch("GeckoView:SetUserPrefs", prefs)
+    }
+
+    private fun setConfirmationSkip(skip: Boolean) {
+        val prefs = GeckoBundle(1)
+        prefs.putString("network.trr.confirmationNS", if (skip) "skip" else "example.com")
+        EventDispatcher.getInstance().dispatch("GeckoView:SetDefaultPrefs", prefs)
+        EventDispatcher.getInstance().dispatch("GeckoView:SetUserPrefs", prefs)
     }
 
     private const val TAG = "DohTxt"
