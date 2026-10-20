@@ -90,7 +90,6 @@ internal fun DohSettingsScreen(
     onMaxInfoClicked: () -> Unit = {},
     onDohTxtToggled: (Boolean) -> Unit = {},
     onDohTxtHostChanged: (String) -> Unit = {},
-    onDohTxtUriChanged: (String) -> Unit = {},
 ) {
     var pendingDelete by remember { mutableStateOf<Provider.Custom?>(null) }
     pendingDelete?.let { provider ->
@@ -126,7 +125,6 @@ internal fun DohSettingsScreen(
                 onMaxInfoClicked = onMaxInfoClicked,
                 onDohTxtToggled = onDohTxtToggled,
                 onDohTxtHostChanged = onDohTxtHostChanged,
-                onDohTxtUriChanged = onDohTxtUriChanged,
             )
 
             HorizontalDivider(modifier = Modifier.padding(8.dp))
@@ -241,7 +239,6 @@ private fun DohSelection(
     onMaxInfoClicked: () -> Unit,
     onDohTxtToggled: (Boolean) -> Unit,
     onDohTxtHostChanged: (String) -> Unit,
-    onDohTxtUriChanged: (String) -> Unit,
 ) {
     state.allProtectionLevels.forEach { protectionLevel ->
         when (protectionLevel) {
@@ -264,11 +261,9 @@ private fun DohSelection(
                 DohTxtPanel(
                     enabled = state.dohTxtEnabled,
                     host = state.dohTxtHost,
-                    uri = state.dohTxtUri,
                     status = state.dohTxtStatus,
                     onEnabled = onDohTxtToggled,
                     onHost = onDohTxtHostChanged,
-                    onUri = onDohTxtUriChanged,
                 )
             }
 
@@ -564,11 +559,9 @@ private fun TextWithUnderline(
 private fun DohTxtPanel(
     enabled: Boolean,
     host: String,
-    uri: String,
     status: String,
     onEnabled: (Boolean) -> Unit,
     onHost: (String) -> Unit,
-    onUri: (String) -> Unit,
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -591,16 +584,6 @@ private fun DohTxtPanel(
                     placeholder = "",
                     errorText = "",
                     label = stringResource(R.string.gox_doh_txt_host),
-                    isError = false,
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                )
-                TextField(
-                    value = uri,
-                    onValueChange = onUri,
-                    placeholder = "",
-                    errorText = "",
-                    label = stringResource(R.string.gox_doh_txt_uri),
                     isError = false,
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
