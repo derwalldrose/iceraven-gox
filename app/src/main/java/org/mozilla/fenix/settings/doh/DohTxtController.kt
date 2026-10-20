@@ -19,7 +19,6 @@ import java.util.concurrent.Executors
 internal object DohTxtController {
     private val io = Executors.newSingleThreadExecutor()
     private val main = Handler(Looper.getMainLooper())
-    const val DEFAULT_TXT_HOST = "ustxt.270376.xyz"
     const val DEFAULT_DOH_URI = "https://do.new.tg/ice"
     const val REFRESH_INTERVAL_MS = 5 * 60 * 1000L
 
@@ -37,7 +36,7 @@ internal object DohTxtController {
         boundSettings = settings
         boundEngine = engine
         main.removeCallbacks(refresh)
-        if (!settings.dohTxtEnabled) {
+        if (txtHost(settings) == null) {
             lastBuilt = ""
             main.post {
                 restoreOriginal(settings, engine)
@@ -55,7 +54,7 @@ internal object DohTxtController {
             )
             main.post {
                 onStatus(status)
-                if (settings.dohTxtEnabled) {
+                if (txtHost(settings) != null) {
                     main.removeCallbacks(refresh)
                     main.postDelayed(refresh, REFRESH_INTERVAL_MS)
                 }
@@ -63,11 +62,15 @@ internal object DohTxtController {
         }
     }
 
-    private fun applyBlocking(settings: Settings, engine: Engine): String {
-        val host = settings.dohTxtHost.split(',', ' ', ';')
+    private fun txtHost(settings: Settings): String? {
+        if (!settings.dohTxtEnabled) return null
+        return settings.dohTxtHost.split(',', ' ', ';')
             .map { it.trim() }
             .firstOrNull { it.isNotBlank() }
-            ?: DEFAULT_TXT_HOST
+    }
+
+    private fun applyBlocking(settings: Settings, engine: Engine): String {
+        val host = txtHost(settings) ?: return ""
         val live = DohTxtLookup.lookup(listOf(host)).firstOrNull()
         if (live != null) {
             settings.dohTxtCachedEndpoint = live.toString()

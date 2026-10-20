@@ -116,7 +116,9 @@ internal class DohSettingsMiddleware(
                 overlayTxt(store)
             }
             is DohSettingsRootAction.DohTxtHostChanged -> {
-                getAppSettings().dohTxtHost = action.host
+                val settings = getAppSettings()
+                settings.dohTxtHost = action.host
+                settings.dohTxtEnabled = action.host.trim().isNotBlank()
                 debounceOverlay(store)
             }
             is DohSettingsRootAction.DohTxtUriChanged -> {
@@ -195,7 +197,7 @@ internal class DohSettingsMiddleware(
         providers = provider.getDefaultProviders(),
         selectedProvider = provider.getSelectedProvider(),
         dohTxtEnabled = settings.dohTxtEnabled,
-        dohTxtHost = settings.dohTxtHost,
+        dohTxtHost = if (settings.dohTxtEnabled) settings.dohTxtHost else "",
         dohTxtUri = settings.dohTxtUri,
         dohTxtStatus = status,
     )

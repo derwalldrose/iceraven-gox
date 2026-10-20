@@ -88,7 +88,6 @@ internal fun DohSettingsScreen(
     onDefaultInfoClicked: () -> Unit = {},
     onIncreasedInfoClicked: () -> Unit = {},
     onMaxInfoClicked: () -> Unit = {},
-    onDohTxtToggled: (Boolean) -> Unit = {},
     onDohTxtHostChanged: (String) -> Unit = {},
 ) {
     var pendingDelete by remember { mutableStateOf<Provider.Custom?>(null) }
@@ -123,7 +122,6 @@ internal fun DohSettingsScreen(
                 onDefaultInfoClicked = onDefaultInfoClicked,
                 onIncreasedInfoClicked = onIncreasedInfoClicked,
                 onMaxInfoClicked = onMaxInfoClicked,
-                onDohTxtToggled = onDohTxtToggled,
                 onDohTxtHostChanged = onDohTxtHostChanged,
             )
 
@@ -237,7 +235,6 @@ private fun DohSelection(
     onDefaultInfoClicked: () -> Unit,
     onIncreasedInfoClicked: () -> Unit,
     onMaxInfoClicked: () -> Unit,
-    onDohTxtToggled: (Boolean) -> Unit,
     onDohTxtHostChanged: (String) -> Unit,
 ) {
     state.allProtectionLevels.forEach { protectionLevel ->
@@ -257,13 +254,6 @@ private fun DohSelection(
                     onClick = {
                         onDohOptionSelected(protectionLevel, null)
                     },
-                )
-                DohTxtPanel(
-                    enabled = state.dohTxtEnabled,
-                    host = state.dohTxtHost,
-                    status = state.dohTxtStatus,
-                    onEnabled = onDohTxtToggled,
-                    onHost = onDohTxtHostChanged,
                 )
             }
 
@@ -290,6 +280,9 @@ private fun DohSelection(
                                         onCustomClicked = onCustomClicked,
                                         onCustomEditClicked = onCustomEditClicked,
                                         onCustomDeleteClicked = onCustomDeleteClicked,
+                                        txtHost = state.dohTxtHost,
+                                        txtStatus = state.dohTxtStatus,
+                                        onTxtHostChanged = onDohTxtHostChanged,
                                     )
                                 }
                             }
@@ -332,6 +325,9 @@ private fun DohSelection(
                                         onCustomClicked = onCustomClicked,
                                         onCustomEditClicked = onCustomEditClicked,
                                         onCustomDeleteClicked = onCustomDeleteClicked,
+                                        txtHost = state.dohTxtHost,
+                                        txtStatus = state.dohTxtStatus,
+                                        onTxtHostChanged = onDohTxtHostChanged,
                                     )
                                 }
                             }
@@ -400,6 +396,9 @@ private fun ProviderDropdown(
     onCustomClicked: () -> Unit,
     onCustomEditClicked: (Provider.Custom) -> Unit,
     onCustomDeleteClicked: (Provider.Custom) -> Unit,
+    txtHost: String,
+    txtStatus: String,
+    onTxtHostChanged: (String) -> Unit,
 ) {
     val customText = stringResource(R.string.preference_doh_provider_custom)
     val defaultText = stringResource(R.string.preference_doh_provider_default)
@@ -476,6 +475,19 @@ private fun ProviderDropdown(
         TextWithUnderline(
             text = selectedProviderOption.url,
         )
+        TextField(
+            value = txtHost,
+            onValueChange = onTxtHostChanged,
+            placeholder = "",
+            errorText = "",
+            label = stringResource(R.string.gox_doh_txt_host),
+            isError = false,
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+        )
+        if (txtStatus.isNotBlank()) {
+            Text(text = txtStatus, style = FirefoxTheme.typography.body2, modifier = Modifier.padding(top = 4.dp))
+        }
     }
 }
 
@@ -552,47 +564,6 @@ private fun TextWithUnderline(
             modifier = Modifier.fillMaxWidth().height(1.dp),
             color = underlineColor,
         )
-    }
-}
-
-@Composable
-private fun DohTxtPanel(
-    enabled: Boolean,
-    host: String,
-    status: String,
-    onEnabled: (Boolean) -> Unit,
-    onHost: (String) -> Unit,
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth().padding(start = 72.dp, top = 6.dp, end = 16.dp, bottom = 6.dp),
-    ) {
-        RadioButton(
-            selected = enabled,
-            onClick = { onEnabled(!enabled) },
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Column(
-            modifier = Modifier.weight(1f).align(Alignment.Top),
-            horizontalAlignment = Alignment.Start,
-        ) {
-            Text(text = stringResource(R.string.gox_doh_txt_title), style = FirefoxTheme.typography.body1)
-            if (enabled) {
-                TextField(
-                    value = host,
-                    onValueChange = onHost,
-                    placeholder = "",
-                    errorText = "",
-                    label = stringResource(R.string.gox_doh_txt_host),
-                    isError = false,
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                )
-                if (status.isNotBlank()) {
-                    Text(text = status, style = FirefoxTheme.typography.body2, modifier = Modifier.padding(top = 4.dp))
-                }
-            }
-        }
     }
 }
 

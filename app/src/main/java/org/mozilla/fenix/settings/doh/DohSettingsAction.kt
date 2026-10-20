@@ -40,7 +40,7 @@ internal sealed class DohSettingsRootAction : DohSettingsAction {
         val selectedProvider: Provider?,
         val exceptionsList: List<String>,
         val dohTxtEnabled: Boolean = false,
-        val dohTxtHost: String = "ustxt.270376.xyz",
+        val dohTxtHost: String = "",
         val dohTxtUri: String = "https://do.new.tg/ice",
         val dohTxtStatus: String = "",
     ) : DohSettingsAction
