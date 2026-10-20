@@ -13,10 +13,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -26,12 +31,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusEvent
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -39,6 +47,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 import mozilla.components.compose.base.LinkText
 import mozilla.components.compose.base.LinkTextState
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
@@ -106,7 +115,12 @@ internal fun DohSettingsScreen(
         )
     }
     Surface {
-        Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .imePadding()
+                .verticalScroll(rememberScrollState()),
+        ) {
             DohSummary(onLearnMoreClicked = onLearnMoreClicked)
 
             DohSelection(
@@ -466,23 +480,40 @@ private fun ProviderDropdown(
     }
 
     if (selectedProviderOption is Provider.Custom) {
-        Text(
-            text = stringResource(R.string.gox_doh_txt_host),
-            style = FirefoxTheme.typography.body2,
-            modifier = Modifier.padding(top = 8.dp),
-        )
-        TextField(
-            value = txtHost,
-            onValueChange = onTxtHostChanged,
-            placeholder = "",
-            errorText = "",
-            label = "",
-            isError = false,
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        if (txtStatus.isNotBlank()) {
-            Text(text = txtStatus, style = FirefoxTheme.typography.body2, modifier = Modifier.padding(top = 4.dp))
+        val bringIntoViewRequester = remember { BringIntoViewRequester() }
+        val imeBottom = WindowInsets.ime.getBottom(LocalDensity.current)
+        var txtFocused by remember { mutableStateOf(false) }
+        LaunchedEffect(txtFocused, imeBottom) {
+            if (!txtFocused) return@LaunchedEffect
+            bringIntoViewRequester.bringIntoView()
+            if (imeBottom == 0) {
+                delay(250)
+                bringIntoViewRequester.bringIntoView()
+            }
+        }
+        Column(
+            modifier = Modifier
+                .bringIntoViewRequester(bringIntoViewRequester)
+                .onFocusEvent { txtFocused = it.hasFocus }
+                .padding(top = 8.dp, bottom = 16.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.gox_doh_txt_host),
+                style = FirefoxTheme.typography.body2,
+            )
+            TextField(
+                value = txtHost,
+                onValueChange = onTxtHostChanged,
+                placeholder = "",
+                errorText = "",
+                label = "",
+                isError = false,
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            if (txtStatus.isNotBlank()) {
+                Text(text = txtStatus, style = FirefoxTheme.typography.body2, modifier = Modifier.padding(top = 4.dp))
+            }
         }
     }
 }
