@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
@@ -33,7 +32,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -182,36 +180,37 @@ private fun DohProtectionLevel(
     onInfoClick: () -> Unit = {},
     onClick: () -> Unit,
 ) {
-    Column(
-        modifier = modifier.padding(start = 72.dp, top = 6.dp, end = 16.dp, bottom = 6.dp),
+    Row(
+        verticalAlignment = Alignment.Top,
+        modifier =
+            modifier.padding(
+                start = 16.dp,
+                top = 6.dp,
+                end = 16.dp,
+                bottom = 6.dp,
+            ),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            RadioButton(
-                selected = selected,
-                onClick = onClick,
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Column(
-                modifier = Modifier.weight(1f),
-                horizontalAlignment = Alignment.Start,
-            ) {
-                ProviderSummary(label, summary)
-            }
-            if (showInfoIcon) {
-                IconButton(
-                    onClick = onInfoClick,
-                    contentDescription = stringResource(R.string.preference_doh_info_description),
-                ) {
-                    Icon(
-                        painter = painterResource(iconsR.drawable.mozac_ic_information_24),
-                        contentDescription = null,
-                    )
-                }
-            }
+        RadioButton(
+            selected = selected,
+            onClick = onClick,
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Column(
+            modifier = Modifier.weight(1f),
+            horizontalAlignment = Alignment.Start,
+        ) {
+            ProviderSummary(label, summary)
+            provider?.invoke()
         }
-        if (provider != null) {
-            Box(modifier = Modifier.padding(start = 56.dp)) {
-                provider()
+        if (showInfoIcon) {
+            IconButton(
+                onClick = onInfoClick,
+                contentDescription = stringResource(R.string.preference_doh_info_description),
+            ) {
+                Icon(
+                    painter = painterResource(iconsR.drawable.mozac_ic_information_24),
+                    contentDescription = null,
+                )
             }
         }
     }
@@ -407,7 +406,7 @@ private fun ProviderDropdown(
 
     var expanded by remember { mutableStateOf(false) }
     var contextProvider by remember { mutableStateOf<Provider.Custom?>(null) }
-    Box(Modifier.fillMaxWidth().padding(vertical = 16.dp)) {
+    Box(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
         Column(Modifier.fillMaxWidth().combinedClickable(
             onClick = { expanded = true },
             onLongClick = {
@@ -467,18 +466,20 @@ private fun ProviderDropdown(
     }
 
     if (selectedProviderOption is Provider.Custom) {
-        TextWithUnderline(
-            text = selectedProviderOption.url,
+        Text(
+            text = stringResource(R.string.gox_doh_txt_host),
+            style = FirefoxTheme.typography.body2,
+            modifier = Modifier.padding(top = 8.dp),
         )
         TextField(
             value = txtHost,
             onValueChange = onTxtHostChanged,
             placeholder = "",
             errorText = "",
-            label = stringResource(R.string.gox_doh_txt_host),
+            label = "",
             isError = false,
             singleLine = true,
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            modifier = Modifier.fillMaxWidth(),
         )
         if (txtStatus.isNotBlank()) {
             Text(text = txtStatus, style = FirefoxTheme.typography.body2, modifier = Modifier.padding(top = 4.dp))
@@ -538,28 +539,6 @@ private fun AlertDialogAddCustomProvider(
             )
         },
     )
-}
-
-@Composable
-private fun TextWithUnderline(
-    text: String,
-    modifier: Modifier = Modifier,
-    underlineColor: Color = MaterialTheme.colorScheme.outline,
-) {
-    Column(modifier = modifier) {
-        Text(
-            modifier = Modifier.fillMaxWidth(),
-            style = FirefoxTheme.typography.body2,
-            text = text,
-        )
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        HorizontalDivider(
-            modifier = Modifier.fillMaxWidth().height(1.dp),
-            color = underlineColor,
-        )
-    }
 }
 
 @Composable

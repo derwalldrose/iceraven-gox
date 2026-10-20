@@ -345,7 +345,7 @@ androidComponents {
                 def versionCodeOverride = Config.generateFennecVersionCode(abi)
                 if (buildType == 'forkRelease') {
                     // Keep custom builds above the corresponding upstream Iceraven build.
-                    versionCodeOverride += 1020
+                    versionCodeOverride += 1021
                 }
                 project.logger.debug("versionCode for $abi = $versionCodeOverride")
                 output.versionName.set(versionName)
