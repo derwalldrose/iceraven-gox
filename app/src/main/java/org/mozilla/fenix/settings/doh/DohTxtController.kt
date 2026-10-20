@@ -52,7 +52,7 @@ internal object DohTxtController {
         val cached = cachedForCurrentHost(settings)
         if (cached != null) {
             main.post {
-                val status = runCatching { applyEndpoint(settings, engine, cached, cachedLabel = true) }
+                val status = runCatching { applyEndpoint(settings, engine, cached, cachedLabel = true, preferred = emptySet()) }
                     .getOrElse { "缓存 ${cached}" }
                 onStatus(status)
             }
@@ -78,6 +78,7 @@ internal object DohTxtController {
     private fun applyBlocking(settings: Settings, engine: Engine): String {
         val hosts = settings.dohTxtHost.split(',', ' ', ';').filter { it.isNotBlank() }
         val live = DohTxtLookup.lookup(hosts.ifEmpty { listOf(DEFAULT_TXT_HOST) }).firstOrNull()
+        val preferred = DohTxtLookup.lookupA(PREFERRED_A_HOSTS)
         val cached = cachedForCurrentHost(settings)
         val endpoint = live ?: cached ?: return "TXT 无 ip:port"
         if (live != null) {
@@ -85,7 +86,7 @@ internal object DohTxtController {
             settings.dohTxtCachedHost = hosts.firstOrNull() ?: DEFAULT_TXT_HOST
         }
         main.post {
-            applyEndpoint(settings, engine, endpoint, cachedLabel = live == null)
+            applyEndpoint(settings, engine, endpoint, cachedLabel = live == null, preferred = preferred)
         }
         return if (live != null) endpoint.toString() else "缓存 ${endpoint}"
     }
@@ -104,6 +105,7 @@ internal object DohTxtController {
         engine: Engine,
         endpoint: DohTxtLookup.Endpoint,
         cachedLabel: Boolean,
+        preferred: Set<String>,
     ): String {
         if (settings.getDohSettingsMode() == Engine.DohSettingsMode.OFF) {
             restoreOriginal(settings, engine)
@@ -119,6 +121,11 @@ internal object DohTxtController {
             engine.settings.dohProviderUrl = built
             lastBuilt = built
             lastBootstrap = endpoint.ip
+        }
+        if (preferred.isNotEmpty()) {
+            DohTxtOriginProxy.update(endpoint, uri.host.orEmpty(), uri.encodedPath ?: "/ice", preferred)
+            DohTxtOriginProxy.start()
+            setOriginProxy(true, uri.host.orEmpty())
         }
         return if (cachedLabel) "缓存 ${endpoint}" else endpoint.toString()
     }
@@ -141,6 +148,8 @@ internal object DohTxtController {
     }
 
     fun restoreOriginal(settings: Settings, engine: Engine) {
+        setOriginProxy(false, "")
+        DohTxtOriginProxy.stop()
         setConfirmationSkip(false)
         setBootstrap("")
         engine.settings.dohProviderUrl = settings.dohProviderUrl
@@ -154,6 +163,53 @@ internal object DohTxtController {
 
     private fun setConfirmationSkip(skip: Boolean) {
         setStringPref("network.trr.confirmationNS", if (skip) "skip" else "example.com")
+    }
+
+    private fun setOriginProxy(enabled: Boolean, dohHost: String) {
+        if (!enabled) {
+            setIntPref("network.proxy.type", 0)
+            return
+        }
+        val port = DohTxtOriginProxy.listenPort
+        if (port <= 0) return
+        setStringPref("network.proxy.http", "127.0.0.1")
+        setIntPref("network.proxy.http_port", port)
+        setStringPref("network.proxy.ssl", "127.0.0.1")
+        setIntPref("network.proxy.ssl_port", port)
+        setBoolPref("network.proxy.share_proxy_settings", true)
+        val bypass = listOf("localhost", "127.0.0.1", dohHost, "ustxt.270376.xyz", "uktxt.270376.xyz", "krtxt.270376.xyz")
+            .filter { it.isNotBlank() }
+            .joinToString(", ")
+        setStringPref("network.proxy.no_proxies_on", bypass)
+        setIntPref("network.proxy.type", 1)
+    }
+
+    private fun setIntPref(name: String, value: Int) {
+        val defaults = GeckoBundle(1)
+        defaults.putInt(name, value)
+        EventDispatcher.getInstance().dispatch("GeckoView:SetDefaultPrefs", defaults)
+        val item = GeckoBundle(4)
+        item.putString("pref", name)
+        item.putString("branch", "user")
+        item.putInt("type", PREF_TYPE_INT)
+        item.putInt("value", value)
+        val request = GeckoBundle(1)
+        request.putBundleArray("prefs", arrayOf(item))
+        EventDispatcher.getInstance().dispatch("GeckoView:Preferences:SetPref", request)
+    }
+
+    private fun setBoolPref(name: String, value: Boolean) {
+        val defaults = GeckoBundle(1)
+        defaults.putBoolean(name, value)
+        EventDispatcher.getInstance().dispatch("GeckoView:SetDefaultPrefs", defaults)
+        val item = GeckoBundle(4)
+        item.putString("pref", name)
+        item.putString("branch", "user")
+        item.putInt("type", PREF_TYPE_BOOL)
+        item.putBoolean("value", value)
+        val request = GeckoBundle(1)
+        request.putBundleArray("prefs", arrayOf(item))
+        EventDispatcher.getInstance().dispatch("GeckoView:Preferences:SetPref", request)
     }
 
     private fun setStringPref(name: String, value: String) {
@@ -172,5 +228,13 @@ internal object DohTxtController {
     }
 
     private const val PREF_TYPE_STRING = 32
+    private const val PREF_TYPE_INT = 64
+    private const val PREF_TYPE_BOOL = 128
+    private val PREFERRED_A_HOSTS = listOf(
+        "jp.270376.xyz",
+        "jp1.270376.xyz",
+        "jp2.270376.xyz",
+        "us.270376.xyz",
+    )
     private const val TAG = "DohTxt"
 }

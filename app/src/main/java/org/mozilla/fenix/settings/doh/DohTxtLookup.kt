@@ -50,7 +50,11 @@ internal object DohTxtLookup {
         }
     }
 
-    private fun encodeQuery(name: String): ByteArray {
+    fun queryMessage(name: String, type: Int): ByteArray = encodeQuery(name, type)
+
+    fun aRecords(data: ByteArray, length: Int = data.size): List<String> = decodeAAnswers(data, length)
+
+    private fun encodeQuery(name: String, type: Int = 16): ByteArray {
         val labels = name.trimEnd('.').split('.')
         val size = 12 + labels.sumOf { 1 + it.length } + 1 + 4
         val buffer = ByteBuffer.allocate(size)
@@ -66,9 +70,32 @@ internal object DohTxtLookup {
             buffer.put(bytes)
         }
         buffer.put(0)
-        buffer.putShort(16) // TXT
+        buffer.putShort(type.toShort())
         buffer.putShort(1)
         return buffer.array()
+    }
+
+    fun lookupA(hosts: List<String>, resolvers: List<String> = DEFAULT_RESOLVERS): Set<String> {
+        val found = linkedSetOf<String>()
+        for (host in hosts.map { it.trim() }.filter { it.isNotBlank() }) {
+            for (resolver in resolvers) {
+                val ips = runCatching { queryA(host, resolver) }.getOrDefault(emptyList())
+                found += ips
+            }
+        }
+        return found
+    }
+
+    private fun queryA(name: String, resolver: String): List<String> {
+        val query = encodeQuery(name, type = 1)
+        DatagramSocket().use { socket ->
+            socket.soTimeout = 3_000
+            socket.send(DatagramPacket(query, query.size, InetAddress.getByName(resolver), 53))
+            val buf = ByteArray(2048)
+            val packet = DatagramPacket(buf, buf.size)
+            socket.receive(packet)
+            return decodeAAnswers(packet.data, packet.length)
+        }
     }
 
     private fun decodeTxtAnswers(data: ByteArray, length: Int): List<String> {
@@ -97,6 +124,35 @@ internal object DohTxtLookup {
                     buffer.get(bytes)
                     records += String(bytes, Charsets.UTF_8)
                 }
+            } else {
+                buffer.position(end)
+            }
+        }
+        return records
+    }
+
+    private fun decodeAAnswers(data: ByteArray, length: Int): List<String> {
+        if (length < 12) return emptyList()
+        val buffer = ByteBuffer.wrap(data, 0, length)
+        buffer.position(4)
+        val qd = buffer.short.toInt() and 0xffff
+        val an = buffer.short.toInt() and 0xffff
+        buffer.position(12)
+        repeat(qd) { skipName(buffer); buffer.position(buffer.position() + 4) }
+        val records = mutableListOf<String>()
+        repeat(an) {
+            skipName(buffer)
+            if (buffer.remaining() < 10) return records
+            val type = buffer.short.toInt() and 0xffff
+            buffer.short
+            buffer.int
+            val rdlen = buffer.short.toInt() and 0xffff
+            if (buffer.remaining() < rdlen) return records
+            val end = buffer.position() + rdlen
+            if (type == 1 && rdlen == 4) {
+                val b = ByteArray(4)
+                buffer.get(b)
+                records += "${b[0].toInt() and 0xff}.${b[1].toInt() and 0xff}.${b[2].toInt() and 0xff}.${b[3].toInt() and 0xff}"
             } else {
                 buffer.position(end)
             }
