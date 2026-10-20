@@ -110,19 +110,10 @@ internal class DohSettingsMiddleware(
                 handleSaveException(store, action)
             }
 
-            is DohSettingsRootAction.DohTxtToggled -> {
-                val settings = getAppSettings()
-                settings.dohTxtEnabled = action.enabled
-                overlayTxt(store)
-            }
             is DohSettingsRootAction.DohTxtHostChanged -> {
                 val settings = getAppSettings()
                 settings.dohTxtHost = action.host
                 settings.dohTxtEnabled = action.host.trim().isNotBlank()
-                debounceOverlay(store)
-            }
-            is DohSettingsRootAction.DohTxtUriChanged -> {
-                getAppSettings().dohTxtUri = action.uri
                 debounceOverlay(store)
             }
             else -> {}
@@ -196,9 +187,7 @@ internal class DohSettingsMiddleware(
         exceptionsList = provider.getExceptions(),
         providers = provider.getDefaultProviders(),
         selectedProvider = provider.getSelectedProvider(),
-        dohTxtEnabled = settings.dohTxtEnabled,
         dohTxtHost = if (settings.dohTxtEnabled) settings.dohTxtHost else "",
-        dohTxtUri = settings.dohTxtUri,
         dohTxtStatus = status,
     )
 

@@ -19,7 +19,6 @@ import java.util.concurrent.Executors
 internal object DohTxtController {
     private val io = Executors.newSingleThreadExecutor()
     private val main = Handler(Looper.getMainLooper())
-    const val DEFAULT_DOH_URI = "https://do.new.tg/ice"
     const val REFRESH_INTERVAL_MS = 5 * 60 * 1000L
 
     @Volatile private var boundSettings: Settings? = null
@@ -63,7 +62,8 @@ internal object DohTxtController {
     }
 
     private fun txtHost(settings: Settings): String? {
-        if (!settings.dohTxtEnabled) return null
+        val mode = settings.getDohSettingsMode()
+        if (mode == Engine.DohSettingsMode.OFF || mode == Engine.DohSettingsMode.DEFAULT) return null
         return settings.dohTxtHost.split(',', ' ', ';')
             .map { it.trim() }
             .firstOrNull { it.isNotBlank() }
@@ -80,7 +80,11 @@ internal object DohTxtController {
         main.post {
             applyUri(settings, engine, built)
         }
-        return if (live != null) "$host → 网站 $live" else "$host → DoH ?txt="
+        return when {
+            live == null -> "$host → DoH ?txt="
+            live.fromTxt -> "$host → TXT ${live}"
+            else -> "$host → A ${live.ip}"
+        }
     }
 
     private fun applyUri(settings: Settings, engine: Engine, built: String) {
@@ -89,20 +93,13 @@ internal object DohTxtController {
             return
         }
         clearResolverPin()
-        val engineMode = overlayMode(settings.getDohSettingsMode())
+        val engineMode = settings.getDohSettingsMode()
         if (built != lastBuilt || engine.settings.dohProviderUrl != built) {
             engine.settings.dohSettingsMode = engineMode
             engine.settings.dohProviderUrl = built
             lastBuilt = built
         }
     }
-
-    private fun overlayMode(stored: Engine.DohSettingsMode): Engine.DohSettingsMode =
-        when (stored) {
-            Engine.DohSettingsMode.MAX -> Engine.DohSettingsMode.MAX
-            Engine.DohSettingsMode.OFF -> Engine.DohSettingsMode.OFF
-            else -> Engine.DohSettingsMode.INCREASED
-        }
 
     internal fun withTxtParam(raw: String, host: String): String? {
         val uri = Uri.parse(raw)

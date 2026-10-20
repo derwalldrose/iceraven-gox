@@ -4,7 +4,5 @@
     <string name="gox_doh_edit">Edit</string>
     <string name="gox_doh_delete">Delete</string>
     <string name="gox_doh_save">Save</string>
-    <string name="gox_doh_txt_title" translatable="false">dohtxt</string>
     <string name="gox_doh_txt_host" translatable="false">TXT</string>
-    <string name="gox_doh_txt_uri" translatable="false">DoH</string>
 </resources>

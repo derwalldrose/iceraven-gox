@@ -27,16 +27,12 @@ internal fun dohSettingsReducer(state: DohSettingsState, action: DohSettingsActi
                 exceptionsList = action.exceptionsList,
                 providers = action.providers,
                 selectedProvider = action.selectedProvider,
-                dohTxtEnabled = action.dohTxtEnabled,
                 dohTxtHost = action.dohTxtHost,
-                dohTxtUri = action.dohTxtUri,
                 dohTxtStatus = action.dohTxtStatus,
             )
         }
 
-        is DohSettingsRootAction.DohTxtToggled -> state.copy(dohTxtEnabled = action.enabled, dohTxtStatus = "…")
         is DohSettingsRootAction.DohTxtHostChanged -> state.copy(dohTxtHost = action.host)
-        is DohSettingsRootAction.DohTxtUriChanged -> state.copy(dohTxtUri = action.uri)
         is DohSettingsRootAction.DohTxtStatus -> state.copy(dohTxtStatus = action.status)
 
         is DohSettingsRootAction.CustomClicked -> {

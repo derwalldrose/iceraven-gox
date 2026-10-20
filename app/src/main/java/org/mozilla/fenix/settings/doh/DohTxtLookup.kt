@@ -6,9 +6,9 @@ import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicInteger
 
-/** TXT `ip:port` records used by fleet preferred domains. Independent of TRR. */
+/** TXT `ip:port` first, then A on 443. Independent of TRR. */
 internal object DohTxtLookup {
-    data class Endpoint(val ip: String, val port: Int) {
+    data class Endpoint(val ip: String, val port: Int, val fromTxt: Boolean = true) {
         override fun toString() = "$ip:$port"
     }
 
@@ -21,15 +21,26 @@ internal object DohTxtLookup {
         if (port !in 1..65535) return null
         val octets = ip.split('.')
         if (octets.size != 4 || octets.any { it.toIntOrNull() !in 0..255 }) return null
-        return Endpoint(ip, port)
+        return Endpoint(ip, port, fromTxt = true)
     }
 
     fun lookup(hosts: List<String>, resolvers: List<String> = DEFAULT_RESOLVERS): List<Endpoint> {
         val found = linkedSetOf<Endpoint>()
-        for (host in hosts.map { it.trim() }.filter { it.isNotBlank() }) {
+        for (host in hosts.map { it.trim().trimEnd('.') }.filter { it.isNotBlank() }) {
             for (resolver in resolvers) {
-                val records = runCatching { queryTxt(host, resolver) }.getOrDefault(emptyList())
-                records.mapNotNull(::parsePayload).forEach { found += it }
+                val packet = runCatching { query(host, type = 16, resolver) }.getOrNull() ?: continue
+                packet.txt.mapNotNull(::parsePayload).forEach { found += it }
+                if (found.isNotEmpty()) return found.toList()
+                val cname = packet.cname
+                if (cname != null && !cname.equals(host, ignoreCase = true)) {
+                    val via = runCatching { query(cname, type = 16, resolver) }.getOrNull()
+                    via?.txt?.mapNotNull(::parsePayload)?.forEach { found += it }
+                    if (found.isNotEmpty()) return found.toList()
+                }
+            }
+            for (resolver in resolvers) {
+                val packet = runCatching { query(host, type = 1, resolver) }.getOrNull() ?: continue
+                packet.a.forEach { found += Endpoint(it, 443, fromTxt = false) }
                 if (found.isNotEmpty()) return found.toList()
             }
         }
@@ -38,23 +49,21 @@ internal object DohTxtLookup {
 
     private val id = AtomicInteger(1)
 
-    private fun queryTxt(name: String, resolver: String): List<String> {
-        val query = encodeQuery(name)
+    private data class Packet(val txt: List<String>, val a: List<String>, val cname: String?)
+
+    private fun query(name: String, type: Int, resolver: String): Packet {
+        val query = encodeQuery(name, type)
         DatagramSocket().use { socket ->
             socket.soTimeout = 3_000
             socket.send(DatagramPacket(query, query.size, InetAddress.getByName(resolver), 53))
             val buf = ByteArray(2048)
             val packet = DatagramPacket(buf, buf.size)
             socket.receive(packet)
-            return decodeTxtAnswers(packet.data, packet.length)
+            return decode(packet.data, packet.length)
         }
     }
 
-    fun queryMessage(name: String, type: Int): ByteArray = encodeQuery(name, type)
-
-    fun aRecords(data: ByteArray, length: Int = data.size): List<String> = decodeAAnswers(data, length)
-
-    private fun encodeQuery(name: String, type: Int = 16): ByteArray {
+    private fun encodeQuery(name: String, type: Int): ByteArray {
         val labels = name.trimEnd('.').split('.')
         val size = 12 + labels.sumOf { 1 + it.length } + 1 + 4
         val buffer = ByteBuffer.allocate(size)
@@ -75,89 +84,75 @@ internal object DohTxtLookup {
         return buffer.array()
     }
 
-    fun lookupA(hosts: List<String>, resolvers: List<String> = DEFAULT_RESOLVERS): Set<String> {
-        val found = linkedSetOf<String>()
-        for (host in hosts.map { it.trim() }.filter { it.isNotBlank() }) {
-            for (resolver in resolvers) {
-                val ips = runCatching { queryA(host, resolver) }.getOrDefault(emptyList())
-                found += ips
-            }
-        }
-        return found
-    }
-
-    private fun queryA(name: String, resolver: String): List<String> {
-        val query = encodeQuery(name, type = 1)
-        DatagramSocket().use { socket ->
-            socket.soTimeout = 3_000
-            socket.send(DatagramPacket(query, query.size, InetAddress.getByName(resolver), 53))
-            val buf = ByteArray(2048)
-            val packet = DatagramPacket(buf, buf.size)
-            socket.receive(packet)
-            return decodeAAnswers(packet.data, packet.length)
-        }
-    }
-
-    private fun decodeTxtAnswers(data: ByteArray, length: Int): List<String> {
-        if (length < 12) return emptyList()
+    private fun decode(data: ByteArray, length: Int): Packet {
+        val txt = mutableListOf<String>()
+        val a = mutableListOf<String>()
+        var cname: String? = null
+        if (length < 12) return Packet(txt, a, null)
         val buffer = ByteBuffer.wrap(data, 0, length)
         buffer.position(4)
         val qd = buffer.short.toInt() and 0xffff
         val an = buffer.short.toInt() and 0xffff
         buffer.position(12)
         repeat(qd) { skipName(buffer); buffer.position(buffer.position() + 4) }
-        val records = mutableListOf<String>()
         repeat(an) {
             skipName(buffer)
-            if (buffer.remaining() < 10) return records
+            if (buffer.remaining() < 10) return Packet(txt, a, cname)
             val type = buffer.short.toInt() and 0xffff
             buffer.short
             buffer.int
             val rdlen = buffer.short.toInt() and 0xffff
-            if (buffer.remaining() < rdlen) return records
+            if (buffer.remaining() < rdlen) return Packet(txt, a, cname)
             val end = buffer.position() + rdlen
-            if (type == 16) {
-                while (buffer.position() < end) {
-                    val n = buffer.get().toInt() and 0xff
-                    if (buffer.position() + n > end) break
-                    val bytes = ByteArray(n)
-                    buffer.get(bytes)
-                    records += String(bytes, Charsets.UTF_8)
+            when (type) {
+                16 -> {
+                    while (buffer.position() < end) {
+                        val n = buffer.get().toInt() and 0xff
+                        if (buffer.position() + n > end) break
+                        val bytes = ByteArray(n)
+                        buffer.get(bytes)
+                        txt += String(bytes, Charsets.UTF_8)
+                    }
                 }
-            } else {
-                buffer.position(end)
+                1 -> if (rdlen == 4) {
+                    val b = ByteArray(4)
+                    buffer.get(b)
+                    a += "${b[0].toInt() and 0xff}.${b[1].toInt() and 0xff}.${b[2].toInt() and 0xff}.${b[3].toInt() and 0xff}"
+                } else {
+                    buffer.position(end)
+                }
+                5 -> {
+                    if (cname == null) cname = readName(data, length, buffer.position())
+                    buffer.position(end)
+                }
+                else -> buffer.position(end)
             }
         }
-        return records
+        return Packet(txt, a, cname)
     }
 
-    private fun decodeAAnswers(data: ByteArray, length: Int): List<String> {
-        if (length < 12) return emptyList()
-        val buffer = ByteBuffer.wrap(data, 0, length)
-        buffer.position(4)
-        val qd = buffer.short.toInt() and 0xffff
-        val an = buffer.short.toInt() and 0xffff
-        buffer.position(12)
-        repeat(qd) { skipName(buffer); buffer.position(buffer.position() + 4) }
-        val records = mutableListOf<String>()
-        repeat(an) {
-            skipName(buffer)
-            if (buffer.remaining() < 10) return records
-            val type = buffer.short.toInt() and 0xffff
-            buffer.short
-            buffer.int
-            val rdlen = buffer.short.toInt() and 0xffff
-            if (buffer.remaining() < rdlen) return records
-            val end = buffer.position() + rdlen
-            if (type == 1 && rdlen == 4) {
-                val b = ByteArray(4)
-                buffer.get(b)
-                records += "${b[0].toInt() and 0xff}.${b[1].toInt() and 0xff}.${b[2].toInt() and 0xff}.${b[3].toInt() and 0xff}"
-            } else {
-                buffer.position(end)
+    private fun readName(data: ByteArray, length: Int, start: Int): String? {
+        val labels = mutableListOf<String>()
+        var i = start
+        var jumps = 0
+        while (i < length && jumps < 10) {
+            val len = data[i].toInt() and 0xff
+            when {
+                len == 0 -> break
+                len and 0xc0 == 0xc0 -> {
+                    if (i + 1 >= length) break
+                    i = ((len and 0x3f) shl 8) or (data[i + 1].toInt() and 0xff)
+                    jumps++
+                    continue
+                }
+                else -> {
+                    if (i + 1 + len > length) break
+                    labels += String(data, i + 1, len, Charsets.US_ASCII)
+                    i += 1 + len
+                }
             }
         }
-        return records
+        return labels.takeIf { it.isNotEmpty() }?.joinToString(".")
     }
 
     private fun skipName(buffer: ByteBuffer) {

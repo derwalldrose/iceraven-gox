@@ -182,41 +182,36 @@ private fun DohProtectionLevel(
     onInfoClick: () -> Unit = {},
     onClick: () -> Unit,
 ) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier =
-            modifier.padding(
-                start = 72.dp,
-                top = 6.dp,
-                end = 16.dp,
-                bottom = 6.dp,
-            ),
+    Column(
+        modifier = modifier.padding(start = 72.dp, top = 6.dp, end = 16.dp, bottom = 6.dp),
     ) {
-        RadioButton(
-            selected = selected,
-            onClick = onClick,
-        )
-
-        Spacer(modifier = Modifier.width(8.dp))
-
-        Column(
-            modifier = Modifier.weight(1f).align(Alignment.Top),
-            horizontalAlignment = Alignment.Start,
-        ) {
-            ProviderSummary(label, summary)
-
-            provider?.invoke()
-        }
-
-        if (showInfoIcon) {
-            IconButton(
-                onClick = onInfoClick,
-                contentDescription = stringResource(R.string.preference_doh_info_description),
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            RadioButton(
+                selected = selected,
+                onClick = onClick,
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.Start,
             ) {
-                Icon(
-                    painter = painterResource(iconsR.drawable.mozac_ic_information_24),
-                    contentDescription = null,
-                )
+                ProviderSummary(label, summary)
+            }
+            if (showInfoIcon) {
+                IconButton(
+                    onClick = onInfoClick,
+                    contentDescription = stringResource(R.string.preference_doh_info_description),
+                ) {
+                    Icon(
+                        painter = painterResource(iconsR.drawable.mozac_ic_information_24),
+                        contentDescription = null,
+                    )
+                }
+            }
+        }
+        if (provider != null) {
+            Box(modifier = Modifier.padding(start = 56.dp)) {
+                provider()
             }
         }
     }

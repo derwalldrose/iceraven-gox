@@ -263,7 +263,6 @@
     <string name="pref_key_doh_exceptions_list_string" translatable="false">pref_key_doh_exceptions_list_string</string>
     <string name="pref_key_doh_txt_enabled" translatable="false">pref_key_doh_txt_enabled</string>
     <string name="pref_key_doh_txt_host" translatable="false">pref_key_doh_txt_host</string>
-    <string name="pref_key_doh_txt_uri" translatable="false">pref_key_doh_txt_uri</string>
     <string name="pref_key_doh_txt_cached" translatable="false">pref_key_doh_txt_cached</string>
     <string name="pref_key_doh_txt_cached_host" translatable="false">pref_key_doh_txt_cached_host</string>
 
