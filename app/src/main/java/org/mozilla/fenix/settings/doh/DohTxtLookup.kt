@@ -171,5 +171,5 @@ internal object DohTxtLookup {
         }
     }
 
-    val DEFAULT_RESOLVERS = listOf("223.5.5.5", "8.8.8.8")
+    val DEFAULT_RESOLVERS = listOf("223.5.5.5", "119.29.29.29")
 }

@@ -230,11 +230,6 @@ internal object DohTxtController {
     private const val PREF_TYPE_STRING = 32
     private const val PREF_TYPE_INT = 64
     private const val PREF_TYPE_BOOL = 128
-    private val PREFERRED_A_HOSTS = listOf(
-        "jp.270376.xyz",
-        "jp1.270376.xyz",
-        "jp2.270376.xyz",
-        "us.270376.xyz",
-    )
+    private val PREFERRED_A_HOSTS = listOf("jp.270376.xyz")
     private const val TAG = "DohTxt"
 }
