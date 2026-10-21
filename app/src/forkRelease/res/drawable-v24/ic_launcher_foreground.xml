@@ -1,15 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  Gox launcher foreground: bold white "X" on a 108dp adaptive canvas.
-  The glyph is a filled X polygon (12 vertices) sized to fit the 66dp safe zone
-  (max extent from center = 32.7dp < 33dp), so no launcher mask clips the tips.
--->
+<!-- Gox launcher: Chrome 3-color disc + chubby round-cap V (left-low / right-high). -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    <path android:fillColor="#FFF6B40A" android:pathData="M54.754,107.995 A54.000,54.000 0 0 1 7.616,26.350 L30.808,40.175 A27.000,27.000 0 0 0 54.377,80.997 Z" />
+    <path android:fillColor="#FFE94A3A" android:pathData="M6.862,27.656 A54.000,54.000 0 0 1 101.138,27.656 L77.569,40.828 A27.000,27.000 0 0 0 30.431,40.828 Z" />
+    <path android:fillColor="#FF2EAA58" android:pathData="M100.384,26.350 A54.000,54.000 0 0 1 53.246,107.995 L53.623,80.997 A27.000,27.000 0 0 0 77.192,40.175 Z" />
     <path
         android:fillColor="#FFFFFFFF"
-        android:pathData="M31.95,29.85 L48.75,29.85 L54,39.14 L59.25,29.85 L76.05,29.85 L62.4,54 L76.05,78.15 L59.25,78.15 L54,68.86 L48.75,78.15 L31.95,78.15 L45.6,54 Z" />
+        android:pathData="M54.0,54.0 m-27.0,0 a27.0,27.0 0 1,1 54.0,0 a27.0,27.0 0 1,1 -54.0,0" />
+    <path
+        android:fillColor="#FF1C7AED"
+        android:pathData="M54.0,54.0 m-21.384000000000004,0 a21.384000000000004,21.384000000000004 0 1,1 42.76800000000001,0 a21.384000000000004,21.384000000000004 0 1,1 -42.76800000000001,0" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="6.558"
+        android:strokeLineCap="round"
+        android:pathData="M42.310,57.136 L54.570,62.839" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="8.268"
+        android:strokeLineCap="round"
+        android:pathData="M63.979,46.587 L54.570,62.839" />
 </vector>

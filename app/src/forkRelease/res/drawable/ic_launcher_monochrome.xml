@@ -1,14 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  Monochrome variant (dark-theme launchers tint this). Same X silhouette,
-  tintable white — launchers apply their own background.
--->
+<!-- Monochrome: chubby V only. Launchers tint this. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
     <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M31.95,29.85 L48.75,29.85 L54,39.14 L59.25,29.85 L76.05,29.85 L62.4,54 L76.05,78.15 L59.25,78.15 L54,68.86 L48.75,78.15 L31.95,78.15 L45.6,54 Z" />
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="6.558"
+        android:strokeLineCap="round"
+        android:pathData="M42.310,57.136 L54.570,62.839" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="8.268"
+        android:strokeLineCap="round"
+        android:pathData="M63.979,46.587 L54.570,62.839" />
 </vector>
